@@ -25,7 +25,7 @@ describe("after Save as a rule", () => {
 
   it("each proposed rule links to the task and feedback it came from, as a full-size tap target", () => {
     const page = read("src/app/rules/page.tsx");
-    expect(page).toContain("See the task and feedback it came from");
+    expect(page).toContain("SEE_TASK_LINK");
     expect(page).toMatch(/minHeight: 44[^}]*task-|task-\$\{words\.taskId\}[^]*minHeight: 44/);
   });
 });

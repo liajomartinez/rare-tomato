@@ -7,6 +7,7 @@
 // words (O2). Still open: the name "Care sheet" (O6), so it lives in ONE constant below and nothing else spells it out.
 
 export const PRODUCT_NAME = "Rare Tomato";
+export const MENU_LABEL = "Menu";
 
 /** The in-product verb for turning a correction into a rule (O1, decided by Lia 2026-10-03). */
 export const SAVE_AS_RULE = "Save as a rule";
@@ -143,14 +144,6 @@ export const OLD_PROPOSALS_NOTE =
 export const RULES_INTRO =
   "A rule is advice you have approved for how your agents should act for you. Agents can read your rules when they ask, but nothing forces an agent to follow one, and we cannot see whether it did. A rule becomes visible to your agents only when you tap Save as a rule; one you have not saved is never shown to any agent.";
 
-/** The sentence to say to Muse in the chat itself. In our one test it made Muse check (see MUSE_FACTS). */
-export const MUSE_CHAT_SENTENCE =
-  "Before you start, check my Rare Tomato rules (get_rules) and saved details (get_care_profile), then do the task, then record what you did with log_task.";
-
-/** What happened with Muse, as counts, one run each (the project notes). Not a claim that anything works. */
-export const MUSE_FACTS =
-  "In our tests (one run each, 2026-10-03), the standing line did not make Muse check on its own: with it in SOUL.md and a normal task, no request from Muse arrived, and with it in Muse's Memory and a normal task, none arrived. When we told Muse in the chat itself to check the rules and details first and then record the task, it made three calls (get_care_profile, get_rules, log_task). So tell it in the chat each time. This is a small test, not a promise.";
-
 export const SAVED_AS_RULE_BANNER = "Saved as a rule. Agents that ask will see it.";
 export const SAVED_AS_RULE_AND_LOCKED_BANNER = "Saved as a rule and locked. Agents that ask will see it.";
 
@@ -198,3 +191,45 @@ export const SENSITIVE_CARD_WHAT = "What you are saving:";
 export const SENSITIVE_CARD_WHO = "Who can see it: no agent can read it until you choose which agents may, on its card after you save. You choose each one.";
 export const SENSITIVE_CARD_CHOICE = "It is your choice to add it, and you can delete it any time. Deleting here does not delete a copy an agent has already kept in its own memory.";
 export const SENSITIVE_CONFIRM_LABEL = "I want this health detail saved, with a Sensitive label.";
+
+// ---- UX pass: the feed, the thumbs-down sheet and the screens' own headings (docs/ux/*.md) ----
+export const FEED_HEADING = "What your agents did";
+export const FEED_SUBLINE = "Agent-reported. Rate what went wrong and we will draft a rule.";
+export const THUMBS_UP_LABEL = "Thumbs up";
+export const THUMBS_DOWN_LABEL = "Thumbs down";
+export const SHEET_TITLE = "What went wrong?";
+export const SHEET_SUB = "Pick one. Words are optional.";
+export const NOTE_LABEL = "A few words help (optional)";
+export const NOTE_PLACEHOLDER = "For example: this was the school office";
+export const SEND_LABEL = "Send";
+export const SHEET_CLOSE = "Close";
+export const YOU_RATED_UP = "You rated this thumbs up. Tap again to change it.";
+export const YOU_RATED_DOWN = "You rated this thumbs down. Tap again to change it.";
+
+// ---- Your rules (docs/ux/rules-new-rule.md, docs/ux/rules-saved.md) ----
+export const RULES_HEADING = "Your rules";
+export const AGENTS_CANNOT_SEE_DRAFT = "Agents cannot see this until you save it.";
+export const SEE_TASK_LINK = "See the task it came from";
+export const EDIT_THEN_APPROVE = "Edit, then approve";
+export const NOT_NOW = "Not now";
+export const JUST_SAVED_LABEL = "Just saved";
+export const JUST_SAVED_ADVICE = "Agents only read rules when they check; this is advice, not a lock.";
+export const savedRulesHeading = (n: number) => `Saved rules (${n})`;
+export const visibleTo = (names: string[]) => `Visible to: ${names.length ? names.join(", ") : "no agent right now"}`;
+export const justSavedFrom = (agent: string | null, when: string | null) =>
+  agent && when ? `From your thumbs down on ${agent}, ${when}.` : agent ? `From your thumbs down on ${agent}.` : "From your own edit or an earlier rule.";
+export const NO_SAVED_RULES = "None yet. No agent sees a rule until you save one.";
+
+// ---- Your agents (docs/ux/agents.md) ----
+export const AGENTS_HEADING = "Your agents";
+export const ONE_STEP_LEFT = "One step left";
+export const CONNECTED_LABEL = "Connected";
+export const EXPERIMENTAL_LABEL = "Experimental";
+export const SETUP_WORKING = "Working";
+export const setupWorkingLine = (dateLabel: string, asked: "rules" | "details") => `It asked for your ${asked} on ${dateLabel}. Based on what it told us.`;
+export const COPY_THE_LINE = "Copy the line";
+export const WHERE_TO_PASTE = "Where do I paste it?";
+export const AGENTS_FOOTER = "Rules are advice. Agents only see them when they check, and we only know what they report.";
+/** Muse is shown as experimental. Nothing here tells the person to instruct Muse in every chat (owner decision, 2026-10-03). */
+export const MUSE_EXPERIMENTAL_LINE = "Muse connects, but it may not check your rules on its own, and its connection may stop after an hour or two.";
+export const MUSE_NO_REQUESTS = "We have not seen Muse ask for your rules yet.";

@@ -1,0 +1,29 @@
+/* The design tokens: the ONLY place colors, type sizes and the card/button look are defined. Every screen reads these variables (directly in
+   globals.css, or through the style objects in src/app/ui.tsx). Light mode only. No blur, no gradients, no transitions. */
+:root {
+  /* color */
+  --blue: #2d45d6; /* the only action color */
+  --ink: #17172b;
+  --paper: #f6f1e7; /* page background */
+  --muted: #4a4a63; /* secondary text */
+  --card: #ffffff;
+
+  /* type */
+  --font-heading: var(--font-bricolage), "Bricolage Grotesque", system-ui, sans-serif;
+  --font-body: var(--font-plex), "IBM Plex Sans", system-ui, sans-serif;
+  --size-title: 30px; /* page title */
+  --size-card-title: 22px;
+  --size-body: 16px;
+  --size-small: 14px;
+  --size-label: 12px; /* small caps labels */
+  --label-weight: 600;
+  --label-tracking: 0.06em;
+
+  /* cards and buttons */
+  --border: 2px solid var(--ink);
+  --shadow: 4px 4px 0 var(--ink); /* hard shadow, no blur */
+  --shadow-blue: 4px 4px 0 var(--blue);
+  --tap: 44px; /* smallest touch target */
+  --tap-primary: 48px; /* the one primary button on a screen */
+  --gutter: 16px;
+}

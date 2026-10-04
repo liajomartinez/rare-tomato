@@ -81,7 +81,7 @@ export const GUIDES: Guide[] = [
       "A sign-in approval page opens. Approve it with the same account you use here.",
       "Come back to Your agents, find Muse under New agents waiting for you, name it, and confirm.",
       "Start a new chat in Muse and ask it to use the Rare Tomato hello tool.",
-      "Then tell Muse in the chat itself to check Rare Tomato (Your agents has the sentence, with a Copy button). In our tests the starter line in SOUL.md or in Muse's Memory did not make Muse check on its own; telling it in the chat did.",
+      "Muse is experimental. It may not check your rules on its own, and its connection may stop after an hour or two. If it stops, reconnect it with the steps above.",
     ],
     expect: ["Muse builds its own small helper to talk to the connector, and decides for itself when to use it.", "Muse may keep what it reads in its own memory."],
     limits: [MUSE_LIMIT, "Muse's own words about why a request failed are its own report, not something we can check."],

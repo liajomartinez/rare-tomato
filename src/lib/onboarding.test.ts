@@ -9,7 +9,7 @@ import { listAgents } from "./agents-view";
 import { AGENT_TYPES, confirmConnection, resolveOAuthConnection } from "./connections";
 import { attestAdult, findOrCreateUser } from "./identity";
 import { agentsNeedingStep, placementFor, setupState, STARTER_PLACEMENT } from "./onboarding";
-import { MUSE_CHAT_SENTENCE, MUSE_FACTS, NO_TOOLS_CHECK_QUESTION, SETUP_NOT_FINISHED, STARTER_LINE } from "./strings";
+import { MUSE_EXPERIMENTAL_LINE, MUSE_NO_REQUESTS, NO_TOOLS_CHECK_QUESTION, SETUP_NOT_FINISHED, STARTER_LINE } from "./strings";
 
 const at = (s: string) => new Date(s);
 const call = (action: string, when: string, id: string | null = "c1") => ({ action, at: at(when), agentConnectionId: id });
@@ -115,7 +115,8 @@ describe("the starter-line screen", () => {
 
   it("states the dated working line from the audit log, and never claims the line was placed", () => {
     const h = html(agent({ setup: { kind: "working", at: new Date("2026-10-03T09:00:00Z"), asked: "rules" } }));
-    expect(h).toContain("Working: it asked for your rules on 2026-10-03");
+    expect(h).toContain("Working");
+    expect(h).toContain("It asked for your rules on 2026-10-03. Based on what it told us.");
     expect(h).not.toContain(SETUP_NOT_FINISHED);
   });
 
@@ -126,17 +127,15 @@ describe("the starter-line screen", () => {
     expect(Object.keys(STARTER_PLACEMENT).sort()).toEqual([...AGENT_TYPES].sort());
   });
 
-  it("Muse: no standing-line step; the sentence to say in the chat, with the one-run facts and no claim that the standing line works", () => {
+  it("Muse: experimental, no starter-line step, no chat sentence, never counted as 'Set up: not finished'", () => {
     const h = html(agent({ type: "muse" }));
-    expect(h).toContain(MUSE_CHAT_SENTENCE);
-    expect(h).toContain("did not make Muse check on its own");
-    expect(h).toContain("one run each");
-    expect(h).toContain("Copy the sentence");
-    expect(h).toContain("Advice, not enforcement");
+    expect(h).toContain(MUSE_NO_REQUESTS);
     expect(h).not.toContain(STARTER_LINE);
     expect(h).not.toContain(NO_TOOLS_CHECK_QUESTION);
-    expect(h).not.toMatch(/SOUL\.md.*(works|took)/);
-    expect(MUSE_FACTS).not.toMatch(/(works|worked|proves?|guarantee)/i);
+    expect(h).not.toContain(SETUP_NOT_FINISHED);
+    expect(h).not.toContain("Copy the sentence");
+    expect(MUSE_EXPERIMENTAL_LINE).toBe("Muse connects, but it may not check your rules on its own, and its connection may stop after an hour or two.");
+    expect(agentsNeedingStep([{ status: "active", type: "muse", setup: { kind: "not_finished" } as never }])).toBe(0);
   });
 
   it("Grok Bot: optional, at the start of a chat, never in Auto-review Rules, and no check question", () => {

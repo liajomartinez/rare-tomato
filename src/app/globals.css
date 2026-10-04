@@ -1,0 +1,266 @@
+/* Base look for every element, built only from the variables in tokens.css. */
+html {
+  background: var(--paper);
+}
+body {
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: var(--size-body);
+  line-height: 1.5;
+  font-weight: 400;
+}
+h1,
+h2,
+h3 {
+  font-family: var(--font-heading);
+  font-weight: 800;
+  line-height: 1.15;
+  margin: 0.5em 0 0.4em;
+}
+h1 {
+  font-size: var(--size-title);
+}
+h2 {
+  font-size: var(--size-card-title);
+}
+h3 {
+  font-size: 18px;
+}
+p {
+  margin: 0.6em 0;
+}
+a {
+  color: var(--blue);
+  text-underline-offset: 3px;
+}
+strong {
+  font-weight: 600;
+}
+code {
+  font-size: 0.9em;
+}
+.label {
+  font-size: var(--size-label);
+  font-weight: var(--label-weight);
+  letter-spacing: var(--label-tracking);
+  text-transform: uppercase;
+  margin: 1.25rem 0 0.5rem;
+}
+.label-blue {
+  color: var(--blue);
+}
+
+/* buttons: secondary by default (white, ink text, 2px ink border, no shadow) */
+button,
+input[type="submit"],
+summary.as-button {
+  min-height: var(--tap);
+  padding: 0.5rem 1rem;
+  font: inherit;
+  font-weight: 600;
+  color: var(--ink);
+  background: var(--card);
+  border: var(--border);
+  border-radius: 6px;
+  cursor: pointer;
+  box-shadow: none;
+}
+button:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+/* the ONE primary button on a screen: blue fill, white text, ink border, hard ink shadow */
+.btn-primary {
+  min-height: var(--tap-primary);
+  color: #fff;
+  background: var(--blue);
+  border: var(--border);
+  box-shadow: var(--shadow);
+}
+.btn-primary:disabled {
+  box-shadow: none;
+}
+.btn-selected {
+  color: #fff;
+  background: var(--blue);
+}
+
+input:not([type="checkbox"]):not([type="radio"]),
+textarea,
+select {
+  font: inherit;
+  color: var(--ink);
+  background: var(--card);
+  border: var(--border);
+  border-radius: 6px;
+  min-height: var(--tap);
+  padding: 0.5rem 0.6rem;
+}
+input[type="checkbox"],
+input[type="radio"] {
+  width: 22px;
+  height: 22px;
+  accent-color: var(--blue);
+  vertical-align: middle;
+}
+label {
+  font-weight: 500;
+}
+:focus-visible {
+  outline: 3px solid var(--blue);
+  outline-offset: 2px;
+}
+details > summary {
+  cursor: pointer;
+  min-height: var(--tap);
+  display: flex;
+  align-items: center;
+}
+nav a {
+  display: inline-block;
+  min-height: var(--tap);
+  line-height: var(--tap);
+}
+table {
+  font-size: var(--size-small);
+}
+
+/* cards */
+.card,
+article.card,
+section.card {
+  background: var(--card);
+  border: var(--border);
+  box-shadow: var(--shadow);
+  padding: var(--gutter);
+  margin: var(--gutter) 0;
+}
+.card-new {
+  border-color: var(--blue);
+  box-shadow: var(--shadow-blue);
+}
+.dashed-box {
+  border: 2px dashed var(--ink);
+  padding: 12px;
+  background: var(--paper);
+  font-family: var(--font-body);
+}
+
+/* header, menu and the bottom sheet */
+.app-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 0 12px;
+  position: relative;
+}
+.wordmark {
+  font-family: var(--font-heading);
+  font-weight: 800;
+  font-size: 22px;
+  color: var(--ink);
+  text-decoration: none;
+}
+.menu {
+  position: relative;
+}
+.menu > summary {
+  list-style: none;
+  justify-content: center;
+}
+.menu > summary::-webkit-details-marker {
+  display: none;
+}
+.menu-panel {
+  position: absolute;
+  right: 0;
+  top: calc(var(--tap) + 6px);
+  z-index: 20;
+  min-width: 220px;
+  background: var(--card);
+  border: var(--border);
+  box-shadow: var(--shadow);
+  padding: 8px 12px;
+  display: flex;
+  flex-direction: column;
+}
+.sheet-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 30;
+  background: rgba(23, 23, 43, 0.55);
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+.sheet {
+  width: 100%;
+  max-width: 640px;
+  max-height: 92vh;
+  overflow: auto;
+  background: var(--card);
+  border: var(--border);
+  border-bottom: 0;
+  box-shadow: var(--shadow);
+  padding: var(--gutter);
+}
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  border: 0;
+  padding: 0;
+  margin: 8px 0;
+}
+.chip {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--tap);
+  padding: 0 14px;
+  border: var(--border);
+  border-radius: 999px;
+  background: var(--card);
+  font-weight: 600;
+  cursor: pointer;
+}
+.chip input {
+  position: absolute;
+  opacity: 0;
+  width: 1px;
+  height: 1px;
+}
+.chip:has(input:checked) {
+  background: var(--blue);
+  color: #fff;
+}
+.chip:has(input:focus-visible) {
+  outline: 3px solid var(--blue);
+  outline-offset: 2px;
+}
+.thumb {
+  width: 56px;
+  min-height: var(--tap);
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.thumb-down {
+  background: var(--blue);
+  border-color: var(--ink);
+  color: #fff;
+}
+.banner {
+  background: var(--blue);
+  color: #fff;
+  border: var(--border);
+  padding: 12px var(--gutter);
+  margin: 8px 0;
+  font-weight: 600;
+}
+.banner a {
+  color: #fff;
+}

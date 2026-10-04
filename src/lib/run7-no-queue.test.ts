@@ -90,7 +90,7 @@ describe("the screens", () => {
 
   it("Your rules has no 'Waiting for your decision' queue; the draft you were sent for is shown with Save, Save and lock, Edit and Not now", () => {
     expect(rules).not.toContain("Waiting for your decision");
-    for (const needle of ["action={approveRule}", 'name="lock" value="yes"', "Edit, then approve", "action={discardDraft}", "Not now", "{SAVE_AS_RULE} and lock", "DRAFT_HEADING"]) expect(rules, needle).toContain(needle);
+    for (const needle of ["action={approveRule}", 'name="lock" value="yes"', "EDIT_THEN_APPROVE", "action={discardDraft}", "NOT_NOW", "{SAVE_AS_RULE} and lock", "DRAFT_HEADING"]) expect(rules, needle).toContain(needle);
     expect(rules).toContain("r.id === q.draft && r.draftExpiresAt !== null");
   });
 

@@ -4,7 +4,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import { MuseLimit, MuseTimedOut } from "@/app/agents/Muse";
 import {
-  MUSE_LIMIT, MUSE_OBSERVED, MUSE_RECONNECT_STEPS, MUSE_STALE_LINE, MUSE_TIMED_OUT_BUTTON, MUSE_TIMED_OUT_HEADING, MUSE_TIMED_OUT_NOTE, museQuietNote,
+  MUSE_EXPERIMENTAL_LINE, MUSE_LIMIT, MUSE_OBSERVED, MUSE_RECONNECT_STEPS, MUSE_STALE_LINE, MUSE_TIMED_OUT_BUTTON, MUSE_TIMED_OUT_HEADING, MUSE_TIMED_OUT_NOTE, museQuietNote,
 } from "./strings";
 
 // Run 8: Muse wording. It says what we saw, as counts, and never "fixed", "reliable", "verified" or "guaranteed".
@@ -18,6 +18,7 @@ describe("Muse wording", () => {
 
   it("the limitation line is exactly the agreed words", () => {
     expect(MUSE_STALE_LINE).toBe("Muse may stop connecting after an hour or two. If it does, reconnect it here.");
+    expect(html(createElement(MuseLimit, { quietHours: null }))).toContain(MUSE_EXPERIMENTAL_LINE);
   });
 
   it("never says fixed, reliable, verified or guaranteed about Muse (strings, the card, the guide)", () => {
@@ -37,7 +38,8 @@ describe("Muse wording", () => {
 describe("the Muse card on Your agents", () => {
   it("shows the limitation line, what we observed and the five reconnect steps", () => {
     const h = html(createElement(MuseLimit, { quietHours: null }));
-    expect(h).toContain(MUSE_STALE_LINE);
+    expect(h).toContain(MUSE_EXPERIMENTAL_LINE);
+    expect(h).not.toMatch(/every chat|in the chat itself/i);
     expect(h).toContain("74, 93 and 107 minutes");
     expect(h).toContain("Reconnect Muse");
     for (const step of MUSE_RECONNECT_STEPS) expect(h).toContain(escaped(step));
