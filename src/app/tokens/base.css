@@ -1,0 +1,7 @@
+/* Minimal element defaults + focus ring */
+html{background:var(--surface-page);color:var(--text-body);font-family:var(--font-body);font-size:var(--type-body-size);line-height:var(--type-body-lh);-webkit-font-smoothing:antialiased}
+body{margin:0}
+a{color:var(--text-link);text-decoration:underline;text-underline-offset:2px}
+a:hover{color:var(--rt-ink)}
+:focus-visible{outline:var(--focus-ring-w) solid var(--focus-ring);outline-offset:var(--focus-ring-gap)}
+.rt-label{font:var(--fw-bold) var(--type-label-size)/1.2 var(--font-body);letter-spacing:var(--type-label-tracking);text-transform:uppercase;color:var(--text-secondary)}

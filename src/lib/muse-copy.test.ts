@@ -57,7 +57,8 @@ describe("the Muse card on Your agents", () => {
 
   it("is shown for a connected Muse, and the timed-out Muse state is used for an unconfirmed expired Muse", () => {
     const page = read("src/app/agents/page.tsx");
-    expect(page).toContain('a.type === "muse" ? <MuseLimit');
+    expect(page).toContain("<MuseLimit quietHours");
+    expect(page).toContain('a.type === "muse"');
     expect(page).toContain('a.suggestedType === "muse" ? (');
     expect(page).toContain("<MuseTimedOut");
   });

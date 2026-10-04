@@ -1,37 +1,117 @@
 import fs from "node:fs";
+import path from "node:path";
 import { describe, expect, it } from "vitest";
-import { EXPERIMENTAL_LABEL, FEED_SUBLINE, MUSE_EXPERIMENTAL_LINE, THUMBS_DOWN_LABEL, THUMBS_UP_LABEL } from "./strings";
 
-const read = (p: string) => fs.readFileSync(p, "utf8");
+// The design handoff (design-source/) is the source of truth for the look. These tests keep the code from drifting away from it:
+// the token files must be the handoff's files, and no component may write its own color, font, radius, border or shadow.
+
+const root = process.cwd();
+const read = (p: string) => fs.readFileSync(path.join(root, p), "utf8").replace(/\r\n/g, "\n");
+
+const HANDOFF_TOKEN_FILES = ["base", "colors", "fonts", "source-aliases", "spacing", "typography"];
 
 describe("design tokens", () => {
-  const css = read("src/app/tokens.css").toLowerCase();
-  it("holds the agreed colors in one file", () => {
-    for (const c of ["#2d45d6", "#17172b", "#f6f1e7", "#4a4a63", "#fff"]) expect(css).toContain(c);
-    expect(css).toContain("4px 4px 0");
+  it("the six token files are the handoff's own files, unchanged", () => {
+    for (const f of HANDOFF_TOKEN_FILES) expect(read(`src/app/tokens/${f}.css`), f).toBe(read(`design-source/tokens/${f}.css`));
   });
-  it("has no blur, gradients or transitions", () => {
-    const all = (css + read("src/app/globals.css").toLowerCase()).replace(new RegExp("/\\*[\\s\\S]*?\\*/", "g"), "");
-    expect(all).not.toMatch(/gradient|blur\(|transition/);
+
+  it("the agreed values are there", () => {
+    const colors = read("src/app/tokens/colors.css");
+    for (const v of ["--rt-blue:#2D45D6", "--rt-ink:#231A2E", "--rt-paper:#F6F3F5", "--rt-ink-2:#5B5068", "--rt-line:#CFC7DB", "--rt-mist:#ECE8F4", "--rt-pink:#F58DB8"]) expect(colors).toContain(v);
+    expect(read("src/app/tokens/typography.css")).toContain("--font-body:'Figtree'");
+    expect(read("src/app/tokens/typography.css")).toContain("--font-display:'Dela Gothic One'");
+    expect(read("src/app/tokens/spacing.css")).toContain("--shadow-button:3px 3px 0 var(--rt-ink)");
+  });
+
+  it("the old palette and fonts are gone", () => {
+    const all = ["src/app/globals.css", "src/app/layout.tsx", "src/app/tokens/app-literals.css"].map(read).join("\n").toLowerCase();
+    for (const gone of ["#f6f1e7", "#17172b", "bricolage", "ibm plex", "#faf3e0", "#c1121f"]) expect(all, gone).not.toContain(gone);
+  });
+
+  it("the five font files are our own and the page loads no font service", () => {
+    for (const f of ["DelaGothicOne-Regular", "Figtree-Regular", "Figtree-Medium", "Figtree-SemiBold", "Figtree-Bold"]) expect(fs.existsSync(path.join(root, `src/app/fonts/${f}.woff2`))).toBe(true);
+    expect(read("src/app/layout.tsx")).not.toMatch(/next\/font|fonts\.googleapis/);
+  });
+
+  it("every non-token value from literals-used-in-screens.json has a name in app-literals.css", () => {
+    const literals = JSON.parse(read("design-source/tokens/literals-used-in-screens.json")) as { radii: Record<string, number>; borders: Record<string, number> };
+    const css = read("src/app/tokens/app-literals.css");
+    for (const border of Object.keys(literals.borders)) {
+      const raw = border.replace("var(--rt-ink)", "var(--rt-ink)");
+      expect(css, border).toContain(raw);
+    }
+    for (const r of ["3px", "18px", "28px 28px 0 0"]) expect(css, r).toContain(r);
+    expect(css).toContain("--rt-scrim");
   });
 });
 
-describe("UX copy", () => {
-  it("uses the agreed words", () => {
-    expect(THUMBS_UP_LABEL).toBe("Thumbs up");
-    expect(THUMBS_DOWN_LABEL).toBe("Thumbs down");
-    expect(FEED_SUBLINE).toBe("Agent-reported. Rate what went wrong and we will draft a rule.");
-    expect(EXPERIMENTAL_LABEL).toBe("Experimental");
-    expect(MUSE_EXPERIMENTAL_LINE).not.toMatch(/every chat/i);
+/** Every file whose job is to hold raw values. Nothing else may write them. */
+const TOKEN_FILES = [/^src\/app\/tokens\//, /^src\/app\/brand-colors\.ts$/];
+
+const walk = (dir: string): string[] =>
+  fs.readdirSync(path.join(root, dir), { withFileTypes: true }).flatMap((e) => {
+    const rel = `${dir}/${e.name}`;
+    return e.isDirectory() ? walk(rel) : [rel];
   });
-  it("Muse is never a required starter-line step", () => {
-    expect(read("src/app/agents/page.tsx")).toContain('a.type !== "muse"');
+
+const components = [...walk("src/app"), "src/lib/scoring/config.ts"].filter(
+  (f) => /\.(tsx?|css)$/.test(f) && !/\.test\./.test(f) && !TOKEN_FILES.some((re) => re.test(f)),
+);
+
+/** Text with comments removed, so a sentence in a comment cannot trip the scan. */
+const code = (f: string) => read(f).replace(/\/\*[\s\S]*?\*\//g, "").replace(/(^|[^:"'`])\/\/.*$/gm, "$1");
+
+describe("no raw colors, fonts, radii, borders or shadows outside the token files", () => {
+  it("scans real files", () => {
+    expect(components.length).toBeGreaterThan(30);
+  });
+
+  it("colors", () => {
+    for (const f of components) {
+      const c = code(f);
+      expect(c.match(/#[0-9a-fA-F]{3,8}\b/g) ?? [], `${f}: hex color`).toEqual([]);
+      expect(c.match(/\b(rgba?|hsla?)\(/g) ?? [], `${f}: rgb/hsl color`).toEqual([]);
+    }
+  });
+
+  it("font names", () => {
+    for (const f of components) {
+      expect(code(f).match(/font-?family|Figtree|Dela Gothic|system-ui|sans-serif|monospace|Arial|Helvetica/g) ?? [], `${f}: font name`).toEqual([]);
+    }
+  });
+
+  it("radii", () => {
+    for (const f of components) {
+      const c = code(f);
+      expect(c.match(/border-radius\s*:\s*[^v;}\s][^;}]*/g) ?? [], `${f}: border-radius`).toEqual([]);
+      expect(c.match(/borderRadius\s*:\s*(\d|"\d|'\d)/g) ?? [], `${f}: borderRadius`).toEqual([]);
+    }
+  });
+
+  it("borders and shadows", () => {
+    for (const f of components) {
+      const c = code(f);
+      expect(c.match(/\bborder(-(top|bottom|left|right))?\s*:\s*[^;}\n]*\b\d+(\.\d+)?px/g) ?? [], `${f}: border`).toEqual([]);
+      expect(c.match(/\bborder(Top|Bottom|Left|Right)?\s*:\s*["'`]\d/g) ?? [], `${f}: border`).toEqual([]);
+      expect(c.match(/box-shadow\s*:\s*(?!var\(|none)/g) ?? [], `${f}: box-shadow`).toEqual([]);
+      expect(c.match(/boxShadow\s*:\s*["'`](?!var\(|none)/g) ?? [], `${f}: boxShadow`).toEqual([]);
+    }
+  });
+
+  it("buttons, cards and chips follow the handoff's sizes through tokens", () => {
+    const css = read("src/app/globals.css");
+    expect(css).toContain("min-height:var(--button-h)");
+    expect(css).toContain("min-height:var(--chip-h)");
+    expect(css).toContain("border-radius:var(--radius-card)");
+    expect(css).toContain("box-shadow:var(--shadow-button)");
+    expect(css).toContain("box-shadow:var(--shadow-sheet)");
   });
 });
 
 describe("docs/ux", () => {
-  it("has a file for each designed screen and CLAUDE.md names the sync rule", () => {
-    for (const f of ["feed", "rules", "agents", "tokens-only"]) expect(fs.existsSync(`docs/ux/${f}.md`)).toBe(true);
+  it("has the screen specs, and CLAUDE.md names the handoff rule", () => {
+    for (const f of ["README", "feed", "rules", "agents", "home", "onboarding", "tokens-only"]) expect(fs.existsSync(path.join(root, `docs/ux/${f}.md`)), f).toBe(true);
+    expect(read("CLAUDE.md")).toContain("design-source/");
     expect(read("CLAUDE.md")).toContain("update its docs/ux/ file in the same commit");
   });
 });

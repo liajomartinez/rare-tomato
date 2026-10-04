@@ -73,7 +73,7 @@ describe("the thumbs-down sheet", () => {
     const form = fs.readFileSync("src/app/feed/FeedbackForm.tsx", "utf8");
     expect(form.indexOf("<textarea")).toBeGreaterThan(-1);
     expect(form.indexOf("{THUMBS_DISCLOSURE}")).toBeGreaterThan(form.indexOf("<textarea"));
-    expect(form.indexOf("{THUMBS_DISCLOSURE}")).toBeLessThan(form.indexOf('SEND_LABEL}'));
+    expect(form.indexOf("{THUMBS_DISCLOSURE}")).toBeLessThan(form.indexOf("H.send"));
   });
 });
 

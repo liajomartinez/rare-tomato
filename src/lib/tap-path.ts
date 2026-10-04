@@ -8,8 +8,8 @@ export const TAP_TARGET = 4;
 
 /** Typing a note is optional and is not a tap. */
 export const FIX_IT_TAP_PATH = [
-  { tap: 1, what: "Tap the thumbs-down on a task card in the feed", where: "src/app/feed/FeedbackForm.tsx", marker: 'aria-label={THUMBS_DOWN_LABEL}' },
+  { tap: 1, what: "Tap the thumbs-down on a task card in the feed", where: "src/app/feed/FeedbackForm.tsx", marker: "S.feed.down" },
   { tap: 2, what: "Tick one reason", where: "src/app/feed/FeedbackForm.tsx", marker: 'name="reason"' },
-  { tap: 3, what: "Tap Send (a note is optional; the feedback is saved, a rule is drafted from the reason and the page opens Your rules with it)", where: "src/app/feed/FeedbackForm.tsx", marker: "SEND_LABEL" },
+  { tap: 3, what: "Tap Send (a note is optional; the feedback is saved, a rule is drafted from the reason and the page opens Your rules with it)", where: "src/app/feed/FeedbackForm.tsx", marker: "H.send" },
   { tap: 4, what: "Tap Save as a rule on the drafted rule", where: "src/app/rules/page.tsx", marker: "SAVE_AS_RULE" },
 ] as const;

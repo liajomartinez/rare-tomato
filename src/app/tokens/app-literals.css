@@ -1,0 +1,88 @@
+/* Named tokens for the raw values the handoff's mockups use directly (design-source/tokens/literals-used-in-screens.json).
+   They are not in the designer's token files, so they live here, with names, and are reported as "added tokens".
+   Nothing in this file is invented: every value comes from the mockups. Components use these names, never the raw values. */
+:root{
+/* scrim behind a sheet or dialog (mockup: rgba of ink at 36%) */
+--rt-scrim:rgba(35,26,46,0.36);
+
+/* borders (literals: "2px solid ink" x27, "1.5px solid line" x23, "1.5px solid ink" x8, "2px dashed ink" x2) */
+--line-ink:2px solid var(--rt-ink);
+--line-card:1.5px solid var(--rt-line);
+--line-ink-thin:1.5px solid var(--rt-ink);
+--line-dashed:2px dashed var(--rt-ink);
+--line-disabled:2px solid var(--rt-line);
+--line-transparent:2px solid transparent;
+
+/* radii (literals 3, 7, 18 and the sheet's top corners) */
+--radius-bar:3px;
+--radius-checkbox:7px;
+--radius-tile:18px;
+--radius-sheet-top:28px 28px 0 0;
+--radius-round:50%;
+
+/* sizes used by the mockups */
+--measure-page:1104px;
+--measure-narrow:520px;
+--rail-w:340px;
+--sheet-w:520px;
+--handle-w:44px;
+--handle-h:5px;
+--tile-h:72px;
+--bar-h:64px;
+--status-icon:20px;
+--avatar:48px;
+--avatar-sm:36px;
+--avatar-md:44px;
+--dot:10px;
+--bar-seg-h:6px;
+
+/* type shorthands (every one is a role from typography.css, or a literal from the mockups) */
+--font-title:var(--fw-bold) var(--type-h2-size)/var(--type-h2-lh) var(--font-body);
+--font-h3:var(--fw-bold) var(--type-h3-size)/var(--type-h3-lh) var(--font-body);
+--font-h4:var(--fw-bold) 17px/1.25 var(--font-body);
+--font-prose:var(--fw-regular) var(--type-body-size)/var(--type-body-lh) var(--font-body);
+--font-prose-tight:var(--fw-regular) 17px/1.5 var(--font-body);
+--font-small:var(--fw-regular) var(--type-caption-size)/var(--type-caption-lh) var(--font-body);
+--font-rule:var(--fw-bold) var(--type-rule-size)/1.3 var(--font-body);
+--font-eyebrow:var(--fw-bold) var(--type-label-size)/1 var(--font-body);
+--font-button:var(--fw-bold) var(--type-button-size)/1 var(--font-body);
+--font-button-sm:var(--fw-bold) 14px/1 var(--font-body);
+--font-chip:var(--fw-medium) var(--type-chip-size)/1.2 var(--font-body);
+--font-tag:var(--fw-semibold) var(--type-tag-size)/1.3 var(--font-body);
+--font-tag-strong:var(--fw-bold) 15px/1.2 var(--font-body);
+--font-sticker:var(--fw-bold) var(--type-tag-size)/1.3 var(--font-body);
+--font-banner:var(--fw-regular) 15px/1.45 var(--font-body);
+--font-field:var(--fw-regular) 16px/1.4 var(--font-body);
+--font-field-label:var(--fw-medium) 14px/1.45 var(--font-body);
+--font-field-hint:var(--fw-medium) 14px/1.45 var(--font-body);
+--font-list:var(--fw-regular) 16px/1.5 var(--font-body);
+--font-strong-line:var(--fw-semibold) 16px/1.4 var(--font-body);
+--font-status:var(--fw-bold) 16px/1.35 var(--font-body);
+--font-link:var(--fw-bold) 16px/1.3 var(--font-body);
+--font-link-sm:var(--fw-bold) 15px/1.3 var(--font-body);
+--font-nav:var(--fw-bold) 15px/1 var(--font-body);
+--font-name:var(--fw-bold) 17px/1.2 var(--font-body);
+--font-name-lg:var(--fw-bold) 19px/1.2 var(--font-body);
+--font-name-md:var(--fw-bold) 18px/1.2 var(--font-body);
+--font-lead:var(--fw-bold) 18px/1.3 var(--font-body);
+--font-rule-row:var(--fw-semibold) 17px/1.4 var(--font-body);
+--font-copy-line:var(--fw-medium) 17px/1.5 var(--font-body);
+--font-pace:var(--fw-semibold) 16px/1.4 var(--font-body);
+--font-pick:var(--fw-bold) 18px/1.2 var(--font-body);
+--font-step-num:var(--fw-bold) 14px/1 var(--font-body);
+--font-check:var(--fw-bold) 16px/1 var(--font-body);
+--font-numeral:var(--fw-regular) 20px/1.2 var(--font-display);
+--font-display-hero:var(--fw-regular) 36px/1.05 var(--font-display);
+--font-display-hero-wide:var(--fw-regular) 56px/1.02 var(--font-display);
+--font-display-home:var(--fw-regular) clamp(34px,6vw,48px)/0.95 var(--font-display);
+--font-avatar:var(--fw-regular) 20px/1 var(--font-display);
+--font-avatar-sm:var(--fw-regular) 15px/1 var(--font-display);
+--font-avatar-md:var(--fw-regular) 18px/1 var(--font-display);
+--font-lead-wide:var(--fw-regular) 20px/1.5 var(--font-body);
+--font-lead-phone:var(--fw-regular) 18px/1.5 var(--font-body);
+--font-mono:var(--fw-medium) 15px/1.3 ui-monospace,Menlo,monospace;
+}
+:root{
+/* the width the not-yet-designed screens (Your details, Settings and data, Terms, Privacy) keep */
+--measure-legacy:640px;
+}

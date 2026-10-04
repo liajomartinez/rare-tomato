@@ -16,7 +16,7 @@ describe("a feed card", () => {
     const html = render({});
     expect(html).toContain("Marge did this");
     expect(html).not.toContain("Grok did this");
-    expect(html).toContain("agent-reported");
+    expect(html).toContain("Agent-reported");
     expect(html).toContain("2026-10-01 15:00 UTC");
   });
 

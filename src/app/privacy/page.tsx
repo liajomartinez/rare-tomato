@@ -11,8 +11,8 @@ import { muted, page } from "../ui";
 
 export const metadata = { title: "Rare Tomato Privacy Notice" };
 
-const th = { textAlign: "left", borderBottom: "2px solid var(--ink)", padding: "0.4rem", verticalAlign: "top" } as const;
-const td = { borderBottom: "1px solid var(--muted)", padding: "0.4rem", verticalAlign: "top" } as const;
+const th = { textAlign: "left", borderBottom: "var(--line-ink)", padding: "0.4rem", verticalAlign: "top" } as const;
+const td = { borderBottom: "var(--line-card)", padding: "0.4rem", verticalAlign: "top" } as const;
 const NOT_FIELD_ENCRYPTED = "Not encrypted at the application field level.";
 
 export default function Privacy() {

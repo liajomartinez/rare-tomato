@@ -1,0 +1,10 @@
+/* Names used in the owner's tokens.css, aliased to the rt- base tokens so either naming works. */
+:root{
+--paper:var(--rt-paper);--mist:var(--rt-mist);--ink:var(--rt-ink);--ink-2:var(--rt-ink-2);--line:var(--rt-line);
+--blue:var(--rt-blue);--pink:var(--rt-pink);--sun:var(--rt-sun);--white:var(--rt-white);
+--heads-up-bg:var(--rt-headsup-bg);--heads-up-fg:var(--rt-headsup-fg);--blocked-bg:var(--rt-blocked-bg);--blocked-fg:var(--rt-blocked-fg);--done-bg:var(--rt-done-bg);--done-fg:var(--rt-done-fg);
+--tomato-1:var(--rt-tomato-1);--tomato-2:var(--rt-tomato-2);--tomato-3:var(--rt-tomato-3);--tomato-4:var(--rt-tomato-4);--tomato-5:var(--rt-tomato-5);
+--radius-field:var(--radius-input);--shadow-print:var(--shadow-button);--shadow-print-hover:var(--shadow-button-hover);
+--touch-min:var(--target-min);--button-height:var(--button-h);--focus-offset:var(--focus-ring-gap);
+color-scheme:light;
+}

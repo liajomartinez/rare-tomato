@@ -1,77 +1,115 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { useActionState, useEffect, useRef, useState } from "react";
 import { REASONS } from "@/lib/feedback-reasons";
-import {
-  DRAFTING_RULE, NOTE_LABEL, NOTE_PLACEHOLDER, SEND_LABEL, SHEET_CLOSE, SHEET_SUB, SHEET_TITLE, THUMBS_DISCLOSURE, THUMBS_DOWN_LABEL, THUMBS_UP_LABEL, YOU_RATED_DOWN, YOU_RATED_UP,
-} from "@/lib/strings";
-import { field, muted, primaryButton } from "../ui";
+import { S, THUMBS_DISCLOSURE } from "@/lib/strings";
 import { saveFeedback, type FeedbackState } from "./actions";
 
-// Thumbs up is one tap. Thumbs down is: the thumb, one reason, Send (three taps). The note is optional (run 7).
+// "Good" is one tap. "Not right" opens the sheet: pick at least one reason, an optional note, then Send (SPEC B2).
 // After Send a rule is drafted and shown on Your rules; the person lands there, or back here with a banner if no rule could be drafted.
-// The design: thumbs buttons 44px high and 56px wide (thumbs down is the blue one); tapping thumbs down opens a bottom sheet over a dimmed page.
-// The icons are drawn here as SVG (the design's icons) and carry the accessible labels "Thumbs up" and "Thumbs down".
+// The sheet is a bottom sheet on a phone and a centred dialog on a wide screen (CSS only). Escape or the dimmed page closes it.
+// The buttons keep the accessible names "Good" and "Not right" (text, no emoji, as the design says).
 
-function ThumbIcon({ down }: { down?: boolean }) {
-  return (
-    <svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" style={down ? { transform: "rotate(180deg)" } : undefined}>
-      <path d="M7 11v9H4a1 1 0 0 1-1-1v-7a1 1 0 0 1 1-1h3Zm0 0 4-7a2 2 0 0 1 2 2v4h5.5a1.5 1.5 0 0 1 1.46 1.84l-1.4 6A1.5 1.5 0 0 1 17.1 18H7" />
-    </svg>
-  );
-}
-
-export function FeedbackForm({ taskId, rating, returnTo = "/feed" }: { taskId: string; rating?: "up" | "down"; returnTo?: string }) {
+export function FeedbackForm({
+  taskId,
+  rating,
+  returnTo = "/feed",
+  context,
+}: {
+  taskId: string;
+  rating?: "up" | "down";
+  returnTo?: string;
+  /** The agent, time and text shown at the top of the sheet. */
+  context?: { agent: string; when: string; text: string };
+}) {
   const [state, action, pending] = useActionState<FeedbackState, FormData>(saveFeedback, {});
   const [open, setOpen] = useState(false);
+  const [picked, setPicked] = useState(0);
+  const first = useRef<HTMLInputElement>(null);
+  const opener = useRef<HTMLButtonElement>(null);
+  const H = S.sheet;
+
+  useEffect(() => {
+    if (open) first.current?.focus();
+  }, [open]);
+
+  const close = () => {
+    setOpen(false);
+    setPicked(0);
+    opener.current?.focus();
+  };
 
   return (
     <form action={action} aria-label="Your feedback on this task">
       <input type="hidden" name="taskId" value={taskId} />
       <input type="hidden" name="returnTo" value={returnTo} />
-      <p style={{ margin: "0.5rem 0", display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
-        <button type="submit" name="rating" value="up" className="thumb" disabled={pending} aria-pressed={rating === "up"} aria-label={THUMBS_UP_LABEL}>
-          <ThumbIcon />
-        </button>
-        <button type="button" className="thumb thumb-down" onClick={() => setOpen(true)} aria-expanded={open} aria-haspopup="dialog" aria-pressed={rating === "down"} aria-label={THUMBS_DOWN_LABEL}>
-          <ThumbIcon down />
-        </button>
-        {rating ? <span style={muted}>{rating === "up" ? YOU_RATED_UP : YOU_RATED_DOWN}</span> : null}
-      </p>
+      <div className="row row-between">
+        <span className="caption">{S.feed.rate}</span>
+        <div className="row row-tight">
+          <button type="submit" name="rating" value="up" className="rate" disabled={pending} aria-pressed={rating === "up"}>
+            {S.feed.up}
+          </button>
+          <button ref={opener} type="button" className="rate" onClick={() => setOpen(true)} aria-haspopup="dialog" aria-pressed={rating === "down"}>
+            {S.feed.down}
+          </button>
+        </div>
+      </div>
       {open ? (
-        <div className="sheet-backdrop" onClick={(e) => e.target === e.currentTarget && setOpen(false)} onKeyDown={(e) => e.key === "Escape" && setOpen(false)}>
+        <div className="scrim" onClick={(e) => e.target === e.currentTarget && close()} onKeyDown={(e) => e.key === "Escape" && close()}>
           <div className="sheet" role="dialog" aria-modal="true" aria-labelledby={`sheet-title-${taskId}`}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 8 }}>
-              <div>
-                <h2 id={`sheet-title-${taskId}`} style={{ margin: 0 }}>
-                  {SHEET_TITLE}
-                </h2>
-                <p style={{ ...muted, margin: "4px 0 8px" }}>{SHEET_SUB}</p>
-              </div>
-              <button type="button" onClick={() => setOpen(false)}>
-                {SHEET_CLOSE}
+            <div className="sheet-handle" aria-hidden="true" />
+            <div className="row row-between row-nowrap">
+              <h3 id={`sheet-title-${taskId}`}>{H.title}</h3>
+              <button type="button" className="btn-quiet pull-right" onClick={close}>
+                {H.close}
               </button>
             </div>
-            <fieldset className="chips" aria-label={SHEET_TITLE}>
-              {REASONS.map((r, i) => (
-                <label key={r.code} className="chip">
-                  <input type="radio" name="reason" value={r.code} autoFocus={i === 0} /> {r.label}
-                </label>
-              ))}
-            </fieldset>
-            <label htmlFor={`note-${taskId}`} style={{ display: "block", fontWeight: 600 }}>
-              {NOTE_LABEL}
-            </label>
-            <textarea id={`note-${taskId}`} name="note" maxLength={1000} rows={3} placeholder={NOTE_PLACEHOLDER} style={field} />
-            <p style={muted}>{THUMBS_DISCLOSURE}</p>
-            <button type="submit" name="rating" value="down" className="btn-primary" style={{ ...primaryButton, width: "100%" }} disabled={pending}>
-              {pending ? DRAFTING_RULE : SEND_LABEL}
+            {context ? (
+              <div className="card card-quiet card-tight stack stack-2">
+                <p className="eyebrow">
+                  {context.agent} · {context.when}
+                </p>
+                <p className="list-text">{context.text}</p>
+              </div>
+            ) : null}
+            <div className="stack stack-2">
+              <span className="caption">{H.pickOne}</span>
+              <fieldset className="chips" aria-label={H.reasonsLabel}>
+                {REASONS.map((r, i) => (
+                  <label key={r.code} className="chip">
+                    <input
+                      ref={i === 0 ? first : undefined}
+                      type="checkbox"
+                      name="reason"
+                      value={r.code}
+                      disabled={pending}
+                      onChange={(e) => setPicked((n) => n + (e.target.checked ? 1 : -1))}
+                    />
+                    <svg className="tick" width="16" height="16" viewBox="0 0 16 16" aria-hidden="true">
+                      <path d="M3 8.5l3.2 3.2L13 4.6" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                    {r.label}
+                  </label>
+                ))}
+              </fieldset>
+            </div>
+            <div className="field">
+              <label htmlFor={`note-${taskId}`}>{H.noteLabel}</label>
+              <textarea id={`note-${taskId}`} name="note" maxLength={1000} rows={2} placeholder={H.notePlaceholder} />
+              <span className="hint">{H.noteHint}</span>
+            </div>
+            <p className="caption">{THUMBS_DISCLOSURE}</p>
+            <button type="submit" name="rating" value="down" className="btn-primary btn-block" disabled={pending || picked === 0}>
+              {pending ? H.drafting : H.send}
             </button>
-            {pending ? <p role="status">{DRAFTING_RULE} This can take a few seconds.</p> : null}
+            <p className="caption" style={{ textAlign: "center" }} role={pending ? "status" : undefined}>
+              {pending ? H.draftingNote : H.next}
+            </p>
+            {state.message ? <p role={state.ok ? "status" : "alert"}>{state.message}</p> : null}
           </div>
         </div>
       ) : null}
-      {state.message ? <p role={state.ok ? "status" : "alert"}>{state.message}</p> : null}
+      {!open && state.message ? <p role={state.ok ? "status" : "alert"}>{state.message}</p> : null}
     </form>
   );
 }

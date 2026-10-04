@@ -1,27 +1,40 @@
 import type { TaskView } from "@/lib/tasks";
 import type { ReactNode } from "react";
-import { card, muted } from "../ui";
+import { S } from "@/lib/strings";
+import { AgentAvatar, StatusIcon } from "../ui";
 
 // One entry in the feed. Everything on it is AGENT-REPORTED: it is what the agent chose to tell us.
 // Agent text is shown as plain text only. It is never turned into links, markup or formatting.
-// Layout (the design): agent name and time on one line, the task title at 16px bold, the short detail, then the rating buttons.
+// Layout (the design, SPEC B1): agent avatar, name and time, the "Agent-reported" tag, the text, then "Rate this task" with the two rating buttons.
 
 const OUTCOME: Record<string, string> = { completed: "Completed", failed: "Did not work", needs_user: "Needs you" };
 
 export const formatTime = (d: Date) => `${d.toISOString().slice(0, 16).replace("T", " ")} UTC`;
+/** Just the clock part, for a card under a "Today" or "Yesterday" heading. */
+export const clockTime = (d: Date) => `${d.toISOString().slice(11, 16)} UTC`;
 
 /** `children` is where the page puts the feedback buttons, so this card stays plain and easy to test. */
 export function TaskCard({ task, children }: { task: TaskView; children?: ReactNode }) {
   return (
-    <article id={`task-${task.id}`} style={card} aria-label={`${task.agentName} did this`}>
-      <p style={{ ...muted, margin: 0 }}>
-        <strong style={{ color: "var(--ink)" }}>{task.agentName}</strong> · {formatTime(task.occurredAt)}
+    <article id={`task-${task.id}`} className="card card-roomy" aria-label={`${task.agentName} did this`}>
+      <div className="task-top">
+        <AgentAvatar name={task.agentName} size="sm" />
+        <div className="stack stack-0 grow">
+          <b style={{ font: "var(--font-name)" }}>{task.agentName}</b>
+          <span className="caption" title={formatTime(task.occurredAt)}>
+            {clockTime(task.occurredAt)}
+          </span>
+        </div>
+        <span className="tag">
+          <StatusIcon kind="outline" />
+          {S.agentReported}
+        </span>
+      </div>
+      <p className="task-text">{task.summary}</p>
+      <p className="caption">
+        {task.category} · {task.outcome ? OUTCOME[task.outcome] : "No outcome reported"}
       </p>
-      <h3 style={{ fontFamily: "var(--font-body)", fontSize: 16, fontWeight: 600, whiteSpace: "pre-wrap", margin: "6px 0" }}>{task.summary}</h3>
-      <p style={muted}>
-        {task.category} · {task.outcome ? OUTCOME[task.outcome] : "No outcome reported"} · <strong>agent-reported</strong>
-      </p>
-      {task.rulesConsulted.length > 0 ? <p style={muted}>Rules it says it looked at: {task.rulesConsulted.join(", ")}</p> : null}
+      {task.rulesConsulted.length > 0 ? <p className="caption">Rules it says it looked at: {task.rulesConsulted.join(", ")}</p> : null}
       {task.details ? (
         <details>
           <summary>More detail (as reported by the agent)</summary>

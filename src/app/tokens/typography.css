@@ -1,0 +1,21 @@
+/* Rare Tomato type tokens. Source: DESIGN-SYSTEM.md §5 */
+:root{
+--font-display:'Dela Gothic One','Arial Black',Impact,sans-serif;
+--font-body:'Figtree',system-ui,sans-serif;
+--fw-regular:400; /* @kind font */
+--fw-medium:500; /* @kind font */
+--fw-semibold:600; /* @kind font */
+--fw-bold:700; /* @kind font */
+
+/* roles */
+--type-display-size:clamp(34px,9vw,64px);--type-display-lh:0.95;
+--type-score-size:clamp(46px,13vw,64px);--type-score-lh:0.95;
+--type-h2-size:28px;--type-h2-lh:1.15;
+--type-h3-size:19px;--type-h3-lh:1.25;
+--type-body-size:17px;--type-body-lh:1.55;--type-body-measure:65ch;
+--type-caption-size:14px;--type-caption-lh:1.45;
+--type-label-size:12px;--type-label-tracking:0.09em;
+--type-descriptor-tracking:0.14em;
+--type-button-size:16px;--type-chip-size:15.5px;--type-tag-size:13.5px;--type-rule-size:20px;
+--wordmark-ratio:1.61; /* @kind other */ /* RARE is 1.61× TOMATO so both lines match width */
+}
