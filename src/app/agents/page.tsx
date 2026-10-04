@@ -209,7 +209,7 @@ export default async function Agents({ searchParams }: { searchParams: Promise<{
                 <p>{S.agents.newBody}</p>
                 <p className="caption">{unconfirmedAgentNote(a.expiresAt ? shortWhen(a.expiresAt) : null, UNASSIGNED_LIFETIME_DAYS)}</p>
                 <details>
-                  <summary className="as-button btn-primary">{S.agents.check}</summary>
+                  <summary className="as-button btn-primary as-primary">{S.agents.check}</summary>
                   <div className="rule-above" style={{ marginTop: "var(--space-3)" }}>
                     <ConfirmForm agent={a} existing={[...active, ...revoked]} />
                   </div>
@@ -240,7 +240,7 @@ export default async function Agents({ searchParams }: { searchParams: Promise<{
             S.agents.timedOutHeading,
             expired.map((a) =>
               a.suggestedType === "muse" ? (
-                <MuseTimedOut key={a.id} id={a.id} removeAction={removeAgent} />
+                <MuseTimedOut key={a.id} id={a.id} removeAction={removeAgent} primary={waiting.length === 0} />
               ) : (
                 <section key={a.id} className="card card-roomy">
                   <p>An agent signed in but was not confirmed in time, so it was turned off.</p>

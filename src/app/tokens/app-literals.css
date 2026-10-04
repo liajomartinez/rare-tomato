@@ -80,6 +80,14 @@
 --font-avatar-md:var(--fw-regular) 18px/1 var(--font-display);
 --font-lead-wide:var(--fw-regular) 20px/1.5 var(--font-body);
 --font-lead-phone:var(--fw-regular) 18px/1.5 var(--font-body);
+--font-label-sm:var(--fw-semibold) 14px/1.4 var(--font-body);
+--font-icon:800 14px/1 var(--font-body);
+--font-icon-sm:800 12px/1 var(--font-body);
+--font-score:var(--fw-regular) var(--type-score-size)/var(--type-score-lh) var(--font-display);
+--font-score-lead:var(--fw-semibold) 16.5px/1.35 var(--font-body);
+--font-score-note:var(--fw-regular) 14.5px/1.45 var(--font-body);
+--font-score-sub:var(--fw-semibold) 15px/1.2 var(--font-body);
+--status-icon-lg:24px;
 --font-mono:var(--fw-medium) 15px/1.3 ui-monospace,Menlo,monospace;
 }
 :root{

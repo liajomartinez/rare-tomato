@@ -15,15 +15,18 @@ export function FeedbackForm({
   rating,
   returnTo = "/feed",
   context,
+  initialOpen = false,
 }: {
   taskId: string;
   rating?: "up" | "down";
   returnTo?: string;
   /** The agent, time and text shown at the top of the sheet. */
   context?: { agent: string; when: string; text: string };
+  /** Show the sheet already open (used by the screen checks in scripts/ux-fixtures.script.ts). */
+  initialOpen?: boolean;
 }) {
   const [state, action, pending] = useActionState<FeedbackState, FormData>(saveFeedback, {});
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(initialOpen);
   const [picked, setPicked] = useState(0);
   const first = useRef<HTMLInputElement>(null);
   const opener = useRef<HTMLButtonElement>(null);

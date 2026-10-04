@@ -10,7 +10,7 @@ export function Landing() {
   const hero = (
     <div className="stack stack-5">
       <h1 className="hero-title">{L.headline}</h1>
-      <p className="lead" style={{ maxWidth: "36ch" }}>
+      <p className="hero-lead">
         {L.sub}
       </p>
       <div className="stack stack-1">

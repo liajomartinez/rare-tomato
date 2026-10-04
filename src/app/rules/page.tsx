@@ -12,7 +12,12 @@ export const dynamic = "force-dynamic";
 
 const STRENGTH_LABEL: Record<string, string> = { prefer: "Prefer", always: "Always", never: "Never" };
 const reasonLabel = (code: string) => REASONS.find((r) => r.code === code)?.label ?? code;
-const time = (d: Date) => `${d.toISOString().slice(0, 16).replace("T", " ")} UTC`;
+const time = (d: Date, now = new Date()) => {
+  const day = d.toISOString().slice(0, 10);
+  const today = now.toISOString().slice(0, 10);
+  const yesterday = new Date(now.getTime() - 86_400_000).toISOString().slice(0, 10);
+  return `${day === today ? "today" : day === yesterday ? "yesterday" : day} ${d.toISOString().slice(11, 16)} UTC`;
+};
 const day = (d: Date) => d.toISOString().slice(0, 10);
 
 function EditForm({ rule }: { rule: RuleRecord }) {
@@ -70,7 +75,7 @@ function Details({ rule, scope }: { rule: RuleRecord; scope: string }) {
 function WhoRow({ label, names }: { label: string; names: string[] }) {
   return (
     <div className="stack stack-2">
-      <span className="strong-line">{label}</span>
+      <span className="label-sm">{label}</span>
       <div className="row row-tight">{names.length ? names.map((a) => <Tag key={a}>{a}</Tag>) : <span className="caption">No agent can read rules right now.</span>}</div>
     </div>
   );
@@ -121,7 +126,7 @@ export default async function Rules({ searchParams }: { searchParams: Promise<{ 
           {words ? (
             <>
               <div className="stack stack-2">
-                <span className="strong-line">{S.rules.fromHeading}</span>
+                <span className="label-sm">{S.rules.fromHeading}</span>
                 {words.source === "agent_reported" ? (
                   <span className="caption">
                     Your agent reported that you said this{words.note ? <>: “{words.note}”</> : null}. This came from the agent, not from you, so please check it matches what you meant.
@@ -149,8 +154,8 @@ export default async function Rules({ searchParams }: { searchParams: Promise<{ 
               </a>
             </>
           ) : null}
-          {r.because ? <p className="caption">{r.because}</p> : null}
-          <Details rule={r} scope={scopeLabel(r.scope)} />
+          {designed ? null : r.because ? <p className="caption">{r.because}</p> : null}
+          {designed ? null : <Details rule={r} scope={scopeLabel(r.scope)} />}
         </div>
         <ConflictPanel rule={r} overlaps={overlaps} resolve={resolveRule} scopeLabel={scopeLabel} />
         <div className="stack rule-above">

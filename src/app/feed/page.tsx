@@ -17,6 +17,14 @@ export const maxDuration = 45;
 const FIRST_SHOWN = 4;
 const MORE_STEP = 25;
 
+function Tick() {
+  return (
+    <svg className="tick" width="16" height="16" viewBox="0 0 16 16" aria-hidden="true">
+      <path d="M3 8.5l3.2 3.2L13 4.6" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
 const dayLabel = (day: string, now: Date) => {
   const today = now.toISOString().slice(0, 10);
   const yesterday = new Date(now.getTime() - 86_400_000).toISOString().slice(0, 10);
@@ -85,9 +93,11 @@ export default async function Feed({
           <div className="stack">
             <div className="row row-tight" role="group" aria-label="Which tasks to show">
               <a className="chip" href={href({ unreviewed: "1" }, ["show"])} aria-current={onlyUnreviewed ? "true" : undefined}>
+                <Tick />
                 {S.feed.filterUnreviewed(toReview)}
               </a>
               <a className="chip" href={href({ unreviewed: "0" }, ["show"])} aria-current={!onlyUnreviewed ? "true" : undefined}>
+                <Tick />
                 {S.feed.filterAll}
               </a>
             </div>

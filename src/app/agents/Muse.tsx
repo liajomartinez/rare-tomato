@@ -45,7 +45,7 @@ export function MuseLimit({ quietHours }: { quietHours: number | null }) {
 }
 
 /** Muse signed in but was never confirmed in time. One primary button, then the same reconnect steps. */
-export function MuseTimedOut({ id, removeAction }: { id: string; removeAction: (formData: FormData) => void | Promise<void> }): ReactNode {
+export function MuseTimedOut({ id, removeAction, primary = true }: { id: string; removeAction: (formData: FormData) => void | Promise<void>; primary?: boolean }): ReactNode {
   return (
     <section className="card card-ink card-roomy" aria-label={MUSE_TIMED_OUT_HEADING}>
       <div className="row row-nowrap">
@@ -58,7 +58,7 @@ export function MuseTimedOut({ id, removeAction }: { id: string; removeAction: (
       <p>{MUSE_TIMED_OUT_NOTE}</p>
       <form action={removeAction}>
         <input type="hidden" name="id" value={id} />
-        <button type="submit" className="btn-primary btn-block">
+        <button type="submit" className={primary ? "btn-primary btn-block" : "btn-block"}>
           {MUSE_TIMED_OUT_BUTTON}
         </button>
       </form>

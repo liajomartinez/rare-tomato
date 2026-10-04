@@ -23,7 +23,7 @@ export function ScoreCard({ percent, scored, tasksLogged, freshnessPercent, paus
   const tomato = percent === null ? null : tomatoFor(percent);
   return (
     <section className="score-card" aria-label="How your agents are doing">
-      <p className="pace">{percent === null ? "Your agents have not logged enough tasks for a score yet" : "Your agents say they followed your instructions"}</p>
+      <p className="score-lead">{percent === null ? "Your agents have not logged enough tasks for a score yet" : "Your agents say they followed your instructions"}</p>
       {paused ? <p role="status">{SCORE_PAUSED}</p> : null}
       <div className="score-figure">
         {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -39,8 +39,11 @@ export function ScoreCard({ percent, scored, tasksLogged, freshnessPercent, paus
             </>
           ) : (
             <>
-              <span className="score-number">{`${percent}%`}</span>
-              <span className="caption">of the time</span>
+              <span className="score-number" role="img" aria-label={`${percent}%`}>
+                {percent}
+                <small>%</small>
+              </span>
+              <span className="score-sub">of the time</span>
               <Tag strong>{tomato!.label}</Tag>
             </>
           )}
@@ -52,7 +55,7 @@ export function ScoreCard({ percent, scored, tasksLogged, freshnessPercent, paus
           {S.agentReported}
         </span>
       </div>
-      <p className="caption">
+      <p className="score-note">
         Adherence score, {AGENT_REPORTED}: of the checks that could be decided in the last 14 days, how many your agents told us they followed. {coverageNote(tasksLogged)}
       </p>
       {needsAnswer > 0 ? (
