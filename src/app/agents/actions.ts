@@ -21,6 +21,12 @@ export async function confirmAgent(formData: FormData) {
     extraScopes: formData.getAll("extra").map(String),
     replaceId: text(formData, "replaceId"),
   });
+  // Onboarding (src/app/start) asks to come back to its own next screen. Only an address inside /start/ is followed.
+  const next = text(formData, "next");
+  if (result.ok && /^\/start\/[a-z]+(\?[\w=&-]*)?$/.test(next)) {
+    revalidatePath("/agents");
+    redirect(next);
+  }
   done(result.ok ? "Agent confirmed." : result.message);
 }
 

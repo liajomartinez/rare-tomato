@@ -3,11 +3,13 @@ import { redirect } from "next/navigation";
 import { currentSession } from "@/lib/session";
 import { ACCEPT_LABEL, PRIVACY_NOTICE_NOTICE } from "@/lib/strings";
 import { confirmAdult } from "./actions";
+import { Narrow } from "../start/parts";
 
 export const dynamic = "force-dynamic";
 
 // "One quick thing". Shown before anything else to a person who has not confirmed they are an adult and accepted the CURRENT Terms.
 // Above the box is a plain notice about the Privacy Notice (it is a notice, not a consent box). One box, unchecked, with no other choice beside it.
+// Not designed in the handoff (the adult tick moves to Create your account, but it is recorded here): tokens only.
 export default async function Welcome({ searchParams }: { searchParams: Promise<{ missing?: string }> }) {
   const session = await currentSession();
   if (session.status === "signed_out") redirect("/sign-in");
@@ -16,7 +18,7 @@ export default async function Welcome({ searchParams }: { searchParams: Promise<
   const [before, after] = PRIVACY_NOTICE_NOTICE.split("Privacy Notice");
 
   return (
-    <main style={{ maxWidth: 520, margin: "4rem auto", padding: "0 1rem", fontFamily: "system-ui, sans-serif" }}>
+    <Narrow>
       <h1>One quick thing</h1>
       <p>
         {before}
@@ -25,23 +27,24 @@ export default async function Welcome({ searchParams }: { searchParams: Promise<
         </Link>
         {after}
       </p>
-      <form action={confirmAdult}>
-        <label style={{ display: "block", minHeight: 44 }}>
-          <input type="checkbox" name="accept" /> {ACCEPT_LABEL}
+      <form action={confirmAdult} className="stack stack-3">
+        <label className="check-row">
+          <input type="checkbox" name="accept" />
+          <span className="check-text">{ACCEPT_LABEL}</span>
         </label>
-        <p style={{ fontSize: "0.9rem" }}>
+        <p className="caption">
           <Link href="/terms" target="_blank" rel="noopener" prefetch={false}>
             Read the Terms
           </Link>{" "}
           (opens in a new tab).
         </p>
         {missing ? <p role="alert">Please tick the box to continue.</p> : null}
-        <p>
-          <button type="submit" style={{ minHeight: 44, padding: "0.5rem 1rem", font: "inherit" }}>
+        <div>
+          <button type="submit" className="btn-primary">
             Continue
           </button>
-        </p>
+        </div>
       </form>
-    </main>
+    </Narrow>
   );
 }

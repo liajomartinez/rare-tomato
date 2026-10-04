@@ -36,11 +36,11 @@ export const MAX_CANDIDATE_RULES = 5;
  * strings.ts (O2, Set C); the cut points are placeholders until golden set B is labeled.
  */
 export const TOMATO_STAGES: { from: number; label: string; fill: string }[] = [
-  { from: 0, label: SCORE_BAND_LABELS[1], fill: "#6a994e" },
-  { from: 25, label: SCORE_BAND_LABELS[2], fill: "#d4a017" },
-  { from: 50, label: SCORE_BAND_LABELS[3], fill: "#e07a1f" },
-  { from: 75, label: SCORE_BAND_LABELS[4], fill: "#c1121f" },
-  { from: 90, label: SCORE_BAND_LABELS[5], fill: "#9d0208" },
+  { from: 0, label: SCORE_BAND_LABELS[1], fill: "var(--rt-tomato-1)" },
+  { from: 25, label: SCORE_BAND_LABELS[2], fill: "var(--rt-tomato-2)" },
+  { from: 50, label: SCORE_BAND_LABELS[3], fill: "var(--rt-tomato-3)" },
+  { from: 75, label: SCORE_BAND_LABELS[4], fill: "var(--rt-tomato-4)" },
+  { from: 90, label: SCORE_BAND_LABELS[5], fill: "var(--rt-tomato-5)" },
 ];
 
 export const MODELS_SCORING = {

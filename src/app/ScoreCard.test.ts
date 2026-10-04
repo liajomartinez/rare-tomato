@@ -32,14 +32,15 @@ describe("the score card", () => {
   it("the tomato itself is hidden from screen readers and is never the only signal", () => {
     const h = html();
     expect(h).toContain('aria-hidden="true"');
-    expect(h).toMatch(/72% &mdash; \w+|72% — \w+/);
+    expect(h).toContain("72%");
+    expect(h).toMatch(new RegExp(TOMATO_STAGES.map((s) => s.label).join("|")));
   });
 
   it("with too few checks it says still learning and shows no number or tomato, but still shows the label and coverage", () => {
     const h = html({ percent: null, scored: 2 });
     expect(h).toContain("Still learning");
-    expect(h).not.toContain("<svg");
-    expect(h).not.toMatch(/\d+%\s*(&mdash;|—)/);
+    expect(h).toContain("tomato-0-still-learning");
+    expect(h).not.toContain("of the time");
     expect(h).toContain("agent-reported");
     expect(h).toContain("not visible here");
   });

@@ -36,7 +36,7 @@ export function FactForm({ defaults, submitLabel }: { defaults: { id?: string; c
         <p role={state.ok ? "status" : "alert"}>{state.ok ? state.message : `Please check: ${state.message}`}</p>
       ) : null}
       {state.needsConfirmation ? (
-        <div role="group" aria-label="Please confirm" style={{ border: "var(--border)", borderRadius: 0, padding: "0.75rem", margin: "0.5rem 0" }}>
+        <div role="group" aria-label="Please confirm" className="card card-ink">
           {state.health ? (
             <>
               <h3>{SENSITIVE_CARD_HEADING}</h3>

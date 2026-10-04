@@ -11,8 +11,8 @@ import { muted, page } from "../ui";
 
 export const metadata = { title: "Rare Tomato Privacy Notice" };
 
-const th = { textAlign: "left", borderBottom: "2px solid var(--ink)", padding: "0.4rem", verticalAlign: "top" } as const;
-const td = { borderBottom: "1px solid var(--muted)", padding: "0.4rem", verticalAlign: "top" } as const;
+const th = { textAlign: "left", borderBottom: "var(--line-ink)", padding: "0.4rem", verticalAlign: "top" } as const;
+const td = { borderBottom: "var(--line-card)", padding: "0.4rem", verticalAlign: "top" } as const;
 const NOT_FIELD_ENCRYPTED = "Not encrypted at the application field level.";
 
 export default function Privacy() {
@@ -34,7 +34,8 @@ export default function Privacy() {
       </p>
 
       <h2>1. What we store</h2>
-      <table style={{ width: "100%", borderCollapse: "collapse" }}>
+      <div style={{ overflowX: "auto" }}>
+<table style={{ width: "100%", borderCollapse: "collapse" }}>
         <thead>
           <tr>
             <th style={th}>What</th>
@@ -107,6 +108,7 @@ export default function Privacy() {
           </tr>
         </tbody>
       </table>
+</div>
       <p>
         Labels, categories, rules, rule history and feedback reasons are not encrypted at the field level and can still reveal personal information. Your details, task
         summaries and details, and notes are encrypted at the field level. Our servers can decrypt them to run the service and to give them to agents you allow.{" "}
@@ -137,7 +139,8 @@ export default function Privacy() {
       </p>
 
       <h2>4. Who processes your information</h2>
-      <table style={{ width: "100%", borderCollapse: "collapse" }}>
+      <div style={{ overflowX: "auto" }}>
+<table style={{ width: "100%", borderCollapse: "collapse" }}>
         <thead>
           <tr>
             <th style={th}>Service</th>
@@ -168,6 +171,7 @@ export default function Privacy() {
           </tr>
         </tbody>
       </table>
+</div>
       <p>We have not confirmed written data-processing terms with each provider.</p>
       <p>
         <strong>What goes to Anthropic, exactly.</strong> (a) <em>Rule draft</em>, after a thumbs-down: the reasons you chose, your note if you wrote one, the task summary, the
@@ -227,7 +231,8 @@ export default function Privacy() {
 
       <h2>9. Cookies and browser storage</h2>
       <p>{COOKIES_PUBLIC}</p>
-      <table style={{ width: "100%", borderCollapse: "collapse" }}>
+      <div style={{ overflowX: "auto" }}>
+<table style={{ width: "100%", borderCollapse: "collapse" }}>
         <thead>
           <tr>
             <th style={th}>Name</th>
@@ -247,6 +252,7 @@ export default function Privacy() {
           ))}
         </tbody>
       </table>
+</div>
       <p>{COOKIES_WORKOS}</p>
 
       <h2>10. Changes and contact</h2>

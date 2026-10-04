@@ -47,7 +47,7 @@ export default async function Profile({ searchParams }: { searchParams: Promise<
                 <h3>
                   {f.key}
                   {f.sensitive ? (
-                    <span style={{ marginLeft: "0.5rem", border: "var(--border)", borderRadius: 0, padding: "0 0.4rem", fontSize: "0.8rem" }}>Sensitive</span>
+                    <span className="tag" style={{ marginLeft: "var(--space-2)" }}>Sensitive</span>
                   ) : null}
                 </h3>
                 <p>{f.value}</p>

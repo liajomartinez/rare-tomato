@@ -6,6 +6,7 @@ import { tenantDb } from "@/db/tenant";
 import { createTestDb, makeUser } from "@/db/testing";
 import { rulesService } from "./rules";
 import { makeServices } from "./services";
+import { DRAFTING_RULE, S } from "./strings";
 
 // Run 7 (Lia's decision, 2026-10-03): a note on a thumbs-down is optional and there are no waiting drafts. A rule becomes visible to agents ONLY
 // when the person taps Save; Not now deletes the draft; a draft nobody decides on is deleted. These tests keep those promises.
@@ -90,7 +91,10 @@ describe("the screens", () => {
 
   it("Your rules has no 'Waiting for your decision' queue; the draft you were sent for is shown with Save, Save and lock, Edit and Not now", () => {
     expect(rules).not.toContain("Waiting for your decision");
-    for (const needle of ["action={approveRule}", 'name="lock" value="yes"', "EDIT_THEN_APPROVE", "action={discardDraft}", "NOT_NOW", "{SAVE_AS_RULE} and lock", "DRAFT_HEADING"]) expect(rules, needle).toContain(needle);
+    for (const needle of ["action={approveRule}", "action={discardDraft}", "NOT_NOW", "S.rules.draftHeading", "SAVE_AS_RULE"]) expect(rules, needle).toContain(needle);
+    // UX-1 revision 1 (owner override): the designed draft has one button. No lock action and no edit-before-save on it.
+    expect(rules).not.toContain('name="lock"');
+    expect(rules).not.toContain("and lock");
     expect(rules).toContain("r.id === q.draft && r.draftExpiresAt !== null");
   });
 
@@ -108,7 +112,8 @@ describe("the screens", () => {
   });
 
   it("while the model runs the person sees 'Drafting your rule', and every outcome ends on a page with a visible message", () => {
-    expect(form).toContain("DRAFTING_RULE");
+    expect(form).toContain("H.drafting");
+    expect(S.sheet.drafting).toBe(DRAFTING_RULE);
     expect(form).toContain("pending");
     expect(feedActions).toContain("DRAFT_FAILED");
     expect(feedActions).toContain("Promise.race");

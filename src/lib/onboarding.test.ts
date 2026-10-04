@@ -1,7 +1,8 @@
+import fs from "node:fs";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { beforeAll, describe, expect, it } from "vitest";
-import { Setup } from "@/app/agents/Setup";
+import { NextStepText, SetupStatus, StarterSteps } from "@/app/agents/Setup";
 import type { Db } from "@/db/client";
 import { tenantDb } from "@/db/tenant";
 import { createTestDb } from "@/db/testing";
@@ -9,7 +10,9 @@ import { listAgents } from "./agents-view";
 import { AGENT_TYPES, confirmConnection, resolveOAuthConnection } from "./connections";
 import { attestAdult, findOrCreateUser } from "./identity";
 import { agentsNeedingStep, placementFor, setupState, STARTER_PLACEMENT } from "./onboarding";
-import { MUSE_EXPERIMENTAL_LINE, MUSE_NO_REQUESTS, NO_TOOLS_CHECK_QUESTION, SETUP_NOT_FINISHED, STARTER_LINE } from "./strings";
+import { MUSE_EXPERIMENTAL_LINE, MUSE_NO_REQUESTS, S, SETUP_NOT_FINISHED, STARTER_LINE } from "./strings";
+
+const NO_TOOLS_CHECK_QUESTION = S.starter.checkQ;
 
 const at = (s: string) => new Date(s);
 const call = (action: string, when: string, id: string | null = "c1") => ({ action, at: at(when), agentConnectionId: id });
@@ -95,28 +98,30 @@ describe("the state through the real audit log", () => {
 });
 
 describe("the starter-line screen", () => {
-  type A = Parameters<typeof Setup>[0]["agent"];
+  type A = Parameters<typeof SetupStatus>[0]["agent"];
   const agent = (over: object) =>
     ({
       id: "c1", name: "Marge", type: "claude", suggestedType: null, scopes: [], status: "active", lastSeenAt: null, expiresAt: null,
       usesBearer: false, lastRulesFetchedAt: null, lastTaskAt: null, notSeenRecently: false, setup: { kind: "not_finished" }, ...over,
     }) as A;
-  const html = (a: A) => renderToStaticMarkup(createElement(Setup, { agent: a, typeLabel: "Claude" }));
+  const html = (a: A) =>
+    renderToStaticMarkup(
+      createElement("div", null, createElement(SetupStatus, { agent: a }), createElement(NextStepText, { agent: a, platform: "Claude" }), createElement(StarterSteps, { agent: a, platform: "Claude" })),
+    );
 
-  it("shows the approved line exactly, the no-tools check and the honest limits", () => {
+  it("shows the approved line exactly, the check question and the honest limits", () => {
     const h = html(agent({}));
     expect(h).toContain(STARTER_LINE);
     expect(h).toContain(NO_TOOLS_CHECK_QUESTION);
     expect(h).toContain(SETUP_NOT_FINISHED);
-    expect(h).toMatch(/Advice, not enforcement/);
+    expect(h).toContain("we cannot tell whether you pasted the line");
     expect(h).toMatch(/small test/);
     expect(h).not.toMatch(/line (is|was|has been) (placed|saved|pasted)/i);
   });
 
   it("states the dated working line from the audit log, and never claims the line was placed", () => {
     const h = html(agent({ setup: { kind: "working", at: new Date("2026-10-03T09:00:00Z"), asked: "rules" } }));
-    expect(h).toContain("Working");
-    expect(h).toContain("It asked for your rules on 2026-10-03. Based on what it told us.");
+    expect(h).toContain("Working: it asked for your rules on 3 Oct");
     expect(h).not.toContain(SETUP_NOT_FINISHED);
   });
 
@@ -128,7 +133,9 @@ describe("the starter-line screen", () => {
   });
 
   it("Muse: experimental, no starter-line step, no chat sentence, never counted as 'Set up: not finished'", () => {
-    const h = html(agent({ type: "muse" }));
+    // The agent card shows Muse's status and the experimental card; it never renders the starter-line steps for Muse (see agents/page.tsx).
+    const h = renderToStaticMarkup(createElement(SetupStatus, { agent: agent({ type: "muse" }) }));
+    expect(fs.readFileSync("src/app/agents/page.tsx", "utf8")).toContain("muse ? (");
     expect(h).toContain(MUSE_NO_REQUESTS);
     expect(h).not.toContain(STARTER_LINE);
     expect(h).not.toContain(NO_TOOLS_CHECK_QUESTION);
@@ -140,8 +147,7 @@ describe("the starter-line screen", () => {
 
   it("Grok Bot: optional, at the start of a chat, never in Auto-review Rules, and no check question", () => {
     const h = html(agent({ type: "grok" }));
-    expect(h).toContain("Optional");
-    expect(h).toContain("the start of a chat with Grok Bot");
+    expect(h).toContain(S.onb.setup.guides["Grok Bot"].intro);
     expect(h).toMatch(/Do not paste the line into Auto-review Rules/);
     expect(h).toContain("No setup step is needed");
     expect(h).not.toContain(NO_TOOLS_CHECK_QUESTION);
@@ -149,9 +155,7 @@ describe("the starter-line screen", () => {
     expect(STARTER_PLACEMENT.grok.optional).toBe(true);
   });
 
-  it("the starter line is the approved wording, word for word", () => {
-    expect(STARTER_LINE).toBe(
-      "At the start of any task you do for me, including drafts, plans and lists, check my Rare Tomato rules (get_rules) and saved details (get_care_profile) first, then record what you did with log_task.",
-    );
+  it("the starter line is the handoff wording (UX-1 revision 6), word for word", () => {
+    expect(STARTER_LINE).toBe("At the start of any task you do for me, check my Rare Tomato rules first, then record what you did.");
   });
 });

@@ -56,7 +56,7 @@ export default async function CareSheet({ searchParams }: { searchParams: Promis
 
       <label>
         Your {CARE_SHEET_NAME_LOWER}
-        <textarea readOnly value={sheet} rows={18} style={{ ...field, fontFamily: "monospace" }} />
+        <textarea readOnly value={sheet} rows={18} className="copy-box-sm" style={field} />
       </label>
       <CopyButton text={sheet} />
     </main>

@@ -1,0 +1,19 @@
+/* Rare Tomato color tokens — light mode only. Source: DESIGN-SYSTEM.md §4 */
+:root{
+/* base */
+--rt-paper:#F6F3F5;--rt-mist:#ECE8F4;--rt-ink:#231A2E;--rt-ink-2:#5B5068;--rt-line:#CFC7DB;
+--rt-blue:#2D45D6;--rt-pink:#F58DB8;--rt-sun:#FFD84D;--rt-white:#FFFFFF;--rt-cream:#FBFAF2;
+/* status (always with icon + word) */
+--rt-headsup-bg:#FFEBC2;--rt-headsup-fg:#7A4300;
+--rt-blocked-bg:#FCE3E0;--rt-blocked-fg:#A32119;
+--rt-done-bg:#DCF2E2;--rt-done-fg:#1F6B34;
+/* tomato ripeness fills — illustration only, NEVER UI/status colors */
+--rt-tomato-1:#74BE2E;--rt-tomato-2:#E6D027;--rt-tomato-3:#EE7116;--rt-tomato-4:#EE3911;--rt-tomato-5:#A6100E;
+/* semantic aliases */
+--surface-page:var(--rt-paper);--surface-card:var(--rt-white);--surface-quiet:var(--rt-mist);--surface-score:var(--rt-mist);--surface-sheet:var(--rt-white);--surface-icon:var(--rt-cream);--surface-inverse:var(--rt-blue);
+--text-body:var(--rt-ink);--text-secondary:var(--rt-ink-2);--text-on-action:var(--rt-white);--text-on-inverse:var(--rt-paper);--text-link:var(--rt-blue);
+--border-interactive:var(--rt-ink);--border-hairline:var(--rt-line);
+--action-primary:var(--rt-blue);--focus-ring:var(--rt-blue);
+--accent-sticker:var(--rt-pink);--accent-quote:var(--rt-pink);--accent-flag:var(--rt-sun);
+--shadow-color:var(--rt-ink);
+}

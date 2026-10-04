@@ -18,14 +18,15 @@ describe("after Save as a rule", () => {
 
   it("shows the saved rule at the top and marks it in the list, so the card does not just vanish", () => {
     const page = read("src/app/rules/page.tsx");
-    expect(page).toContain("The rule you just saved");
+    expect(page).toContain("S.rules.justSaved");
     expect(page).toContain("id={`rule-${r.id}`}");
     expect(page).toContain("r.id === q.saved");
   });
 
   it("each proposed rule links to the task and feedback it came from, as a full-size tap target", () => {
     const page = read("src/app/rules/page.tsx");
-    expect(page).toContain("SEE_TASK_LINK");
-    expect(page).toMatch(/minHeight: 44[^}]*task-|task-\$\{words\.taskId\}[^]*minHeight: 44/);
+    expect(page).toContain("S.rules.seeSource");
+    expect(page).toContain('className="link" href={`/feed#task-${words.taskId}`}');
+    expect(read("src/app/globals.css")).toMatch(/\.link\{[^}]*min-height:var\(--target-min\)/);
   });
 });

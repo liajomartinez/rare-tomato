@@ -1,0 +1,16 @@
+/* Spacing, shape, elevation, motion. Source: DESIGN-SYSTEM.md §6 */
+:root{
+--space-1:4px;--space-2:8px;--space-3:12px;--space-4:16px;--space-5:24px;--space-6:32px;--space-7:48px;
+--gutter:16px;--design-width:390px;
+--radius-pill:999px;--radius-card:22px;--radius-sheet:28px;--radius-banner:14px;--radius-input:14px;--radius-app-icon:23%;
+--border-interactive-w:2px;--border-chip-w:1.5px;--border-hairline-w:1.5px;
+--shadow-button:3px 3px 0 var(--rt-ink);--shadow-button-hover:4px 4px 0 var(--rt-ink);--shadow-button-press:0 0 0 var(--rt-ink);
+--shadow-sticker:2px 2px 0 var(--rt-ink);--shadow-frame:6px 6px 0 var(--rt-ink);--shadow-sheet:0 -3px 0 var(--rt-ink);
+--target-min:44px;--button-h:48px;--chip-h:44px;--meter-h:12px;
+--focus-ring-w:3px;--focus-ring-gap:3px;
+--motion-press:0.12s; /* @kind other */
+--ease-press:ease-out; /* @kind other */
+
+--sticker-rotate:-2deg; /* @kind other */
+}
+@media (prefers-reduced-motion:reduce){:root{--motion-press:0s; /* @kind other */}}
