@@ -91,3 +91,10 @@ export function whoCanSee(agents: AgentView[]): Record<Category, string[]> {
   }
   return out;
 }
+
+/** The names of the connected agents that can read a rule: it is for everyone ("all") or for one agent, and the agent must be allowed to read rules. */
+export function whoCanSeeRule(agents: AgentView[], scope: string): string[] {
+  return agents
+    .filter((a) => a.status === "active" && a.scopes.includes("rules:read") && (scope === "all" || scope === `agent:${a.id}`))
+    .map((a) => a.name);
+}

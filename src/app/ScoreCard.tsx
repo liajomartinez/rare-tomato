@@ -19,7 +19,7 @@ export interface ScoreCardProps {
 function Tomato({ fill }: { fill: string }) {
   return (
     <svg width="44" height="44" viewBox="0 0 44 44" aria-hidden="true" focusable="false">
-      <circle cx="22" cy="25" r="16" fill={fill} stroke="#222" strokeWidth="2" />
+      <circle cx="22" cy="25" r="16" fill={fill} stroke="#17172b" strokeWidth="2" />
       <path d="M22 9 L18 3 M22 9 L22 2 M22 9 L26 3" stroke="#2d6a4f" strokeWidth="3" strokeLinecap="round" />
     </svg>
   );

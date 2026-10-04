@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
-import { MUSE_OBSERVED, MUSE_RECONNECT_HEADING, MUSE_RECONNECT_STEPS, MUSE_STALE_LINE, MUSE_TIMED_OUT_BUTTON, MUSE_TIMED_OUT_HEADING, MUSE_TIMED_OUT_NOTE, museQuietNote } from "@/lib/strings";
-import { button, card, muted } from "../ui";
+import { MUSE_EXPERIMENTAL_LINE, MUSE_OBSERVED, MUSE_RECONNECT_HEADING, MUSE_RECONNECT_STEPS, MUSE_TIMED_OUT_BUTTON, MUSE_TIMED_OUT_HEADING, MUSE_TIMED_OUT_NOTE, museQuietNote } from "@/lib/strings";
+import { cardNew, muted, primaryButton } from "../ui";
 
 // What Your agents says about Muse. Everything here is what we saw in our own tests, as counts, and says nothing stronger.
 
@@ -24,7 +24,7 @@ export function MuseLimit({ quietHours }: { quietHours: number | null }) {
   return (
     <div style={muted}>
       <p role="note">
-        <strong>{MUSE_STALE_LINE}</strong>
+        <strong>{MUSE_EXPERIMENTAL_LINE}</strong>
       </p>
       <p>{MUSE_OBSERVED}</p>
       {quietHours !== null ? <p role="status">{museQuietNote(quietHours)}</p> : null}
@@ -36,12 +36,12 @@ export function MuseLimit({ quietHours }: { quietHours: number | null }) {
 /** Muse signed in but was never confirmed in time. One primary button, then the same reconnect steps. */
 export function MuseTimedOut({ id, removeAction }: { id: string; removeAction: (formData: FormData) => void | Promise<void> }): ReactNode {
   return (
-    <section style={card} aria-label={MUSE_TIMED_OUT_HEADING}>
+    <section style={cardNew} aria-label={MUSE_TIMED_OUT_HEADING}>
       <h3>{MUSE_TIMED_OUT_HEADING}</h3>
       <p>{MUSE_TIMED_OUT_NOTE}</p>
       <form action={removeAction}>
         <input type="hidden" name="id" value={id} />
-        <button type="submit" style={button}>
+        <button type="submit" className="btn-primary" style={primaryButton}>
           {MUSE_TIMED_OUT_BUTTON}
         </button>
       </form>

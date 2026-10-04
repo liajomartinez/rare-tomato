@@ -2,9 +2,10 @@ import { agentsFor } from "@/db/production";
 import { resourceUrl } from "@/lib/base-address";
 import type { AgentView } from "@/lib/agents-view";
 import { requireReady } from "@/lib/session";
-import { button, card, field, muted, Nav, Notice, page, SignedInAs } from "../ui";
+import { button, card, cardNew, field, muted, Nav, Notice, page, SignedInAs, smallCaps } from "../ui";
+import { placementFor } from "@/lib/onboarding";
 import { UNASSIGNED_LIFETIME_DAYS } from "@/lib/connections";
-import { RULES_SHORT_NOTE, unconfirmedAgentNote } from "@/lib/strings";
+import { AGENTS_FOOTER, CONNECTED_LABEL, EXPERIMENTAL_LABEL, ONE_STEP_LEFT, RULES_SHORT_NOTE, unconfirmedAgentNote } from "@/lib/strings";
 import { Guides } from "./Guides";
 import { Health } from "./Health";
 import { MuseLimit, MuseTimedOut } from "./Muse";
@@ -92,39 +93,15 @@ export default async function Agents({ searchParams }: { searchParams: Promise<{
   const expired = agents.filter((a) => a.status === "expired");
   const active = agents.filter((a) => a.status === "active");
   const revoked = agents.filter((a) => a.status === "revoked");
-
-  return (
-    <main style={page}>
-      <Nav />
-      <h1>Your agents</h1>
-      <SignedInAs email={person.email} />
-      {message ? <Notice>{message}</Notice> : null}
-
-      <h2>New agents waiting for you</h2>
-      {waiting.length === 0 ? <p style={muted}>Nothing waiting.</p> : null}
-      {waiting.map((a) => (
-        <section key={a.id} style={card} aria-label="New agent">
-          <h3>{a.suggestedType ? `Looks like ${TYPE_LABEL[a.suggestedType]}` : "New agent: which one is this?"}</h3>
-          <p>
-            It signed in, but you have not confirmed it yet. Until you do, it can only say hello. It cannot see any of your details.
-            {" "}
-            {unconfirmedAgentNote(a.expiresAt ? when(a.expiresAt) : null, UNASSIGNED_LIFETIME_DAYS)}
-          </p>
-          <ConfirmForm agent={a} existing={[...active, ...revoked]} />
-        </section>
-      ))}
-
-      <h2>Your connected agents</h2>
-      {active.length === 0 ? (
-        <p style={muted}>
-          No agents are connected yet. After you add the address below in your agent, ask it to use the Rare Tomato tool once (for example: &ldquo;use the Rare
-          Tomato hello tool&rdquo;). It will appear above so you can confirm it. After you confirm it, start a new chat in that agent.
-        </p>
-      ) : null}
-      {active.map((a) => (
-        <section key={a.id} style={card} aria-label={a.name}>
+  // "One step left": a connected agent that has not asked for rules yet (not Muse, which is experimental, and not optional Grok Bot).
+  const needsStep = (a: AgentView) => a.setup.kind === "not_finished" && a.type !== "muse" && !placementFor(a.type).optional;
+  const oneStepLeft = active.filter(needsStep);
+  const connected = active.filter((a) => !needsStep(a));
+  const agentCard = (a: AgentView, isNew: boolean) => (
+        <section key={a.id} style={isNew ? cardNew : card} aria-label={a.name}>
           <h3>
             {a.name} <span style={muted}>({a.type ? TYPE_LABEL[a.type] : "unknown"}, connected)</span>
+            {a.type === "muse" ? <span style={{ ...smallCaps, marginLeft: 8 }}>{EXPERIMENTAL_LABEL}</span> : null}
           </h3>
           <Setup agent={a} typeLabel={a.type ? TYPE_LABEL[a.type] : "your agent"} />
           <Health agent={a} />
@@ -162,7 +139,40 @@ export default async function Agents({ searchParams }: { searchParams: Promise<{
             </button>
           </form>
         </section>
+  );
+
+  return (
+    <main style={page}>
+      <Nav />
+      <h1>Your agents</h1>
+      <SignedInAs email={person.email} />
+      {message ? <Notice>{message}</Notice> : null}
+
+      <h2>New agents waiting for you</h2>
+      {waiting.length === 0 ? <p style={muted}>Nothing waiting.</p> : null}
+      {waiting.map((a) => (
+        <section key={a.id} style={card} aria-label="New agent">
+          <h3>{a.suggestedType ? `Looks like ${TYPE_LABEL[a.suggestedType]}` : "New agent: which one is this?"}</h3>
+          <p>
+            It signed in, but you have not confirmed it yet. Until you do, it can only say hello. It cannot see any of your details.
+            {" "}
+            {unconfirmedAgentNote(a.expiresAt ? when(a.expiresAt) : null, UNASSIGNED_LIFETIME_DAYS)}
+          </p>
+          <ConfirmForm agent={a} existing={[...active, ...revoked]} />
+        </section>
       ))}
+
+      <h2>Your connected agents</h2>
+      {active.length === 0 ? (
+        <p style={muted}>
+          No agents are connected yet. After you add the address below in your agent, ask it to use the Rare Tomato tool once (for example: &ldquo;use the Rare
+          Tomato hello tool&rdquo;). It will appear above so you can confirm it. After you confirm it, start a new chat in that agent.
+        </p>
+      ) : null}
+      {oneStepLeft.length > 0 ? <p style={smallCaps}>{ONE_STEP_LEFT}</p> : null}
+      {oneStepLeft.map((a) => agentCard(a, true))}
+      {connected.length > 0 ? <p style={smallCaps}>{CONNECTED_LABEL}</p> : null}
+      {connected.map((a) => agentCard(a, false))}
 
       {expired.length > 0 ? <h2>Timed out</h2> : null}
       {expired.map((a) =>
@@ -204,6 +214,7 @@ export default async function Agents({ searchParams }: { searchParams: Promise<{
       </p>
       <Guides address={connectorAddress()} />
       <p style={muted}>{RULES_SHORT_NOTE}</p>
+      <p style={muted}>{AGENTS_FOOTER}</p>
     </main>
   );
 }

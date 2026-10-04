@@ -70,7 +70,7 @@ describe("per-agent guides", () => {
 
   it("every live guide ends with the starter-line step (O7, approved by Lia 2026-10-03) and does not paste the line itself", () => {
     for (const g of GUIDES.filter((x) => x.mode === "live")) {
-      expect(g.steps[g.steps.length - 1], g.id).toMatch(/starter line|in the chat itself/i);
+      expect(g.steps[g.steps.length - 1], g.id).toMatch(/starter line|experimental/i);
       expect(g.steps.join(" "), g.id).not.toContain("check my Rare Tomato rules");
     }
   });

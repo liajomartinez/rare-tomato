@@ -1,15 +1,21 @@
-import { agentsFor, feedbackFor, rulesFor } from "@/db/production";
+import { agentsFor, feedbackFor, rulesFor, tasksFor } from "@/db/production";
+import { whoCanSeeRule } from "@/lib/agents-view";
 import { STRENGTHS, type RuleRecord } from "@/lib/rules";
 import { requireReady } from "@/lib/session";
-import { button, card, field, muted, Nav, Notice, page } from "../ui";
+import { Banner, button, card, cardNew, field, muted, Nav, Notice, page, primaryButton, smallCaps } from "../ui";
 import { ConflictPanel, hasContradiction, overlapsFor } from "./ConflictPanel";
-import { AGENT_MEMORY_NOTE, DRAFT_GONE, DRAFT_HEADING, DRAFT_NOTE, OLD_PROPOSALS_HEADING, OLD_PROPOSALS_NOTE, RULES_INTRO, SAVE_AS_RULE } from "@/lib/strings";
+import {
+  AGENT_MEMORY_NOTE, AGENTS_CANNOT_SEE_DRAFT, DRAFT_GONE, DRAFT_HEADING, DRAFT_NOTE, EDIT_THEN_APPROVE, JUST_SAVED_ADVICE, JUST_SAVED_LABEL, justSavedFrom, NO_SAVED_RULES, NOT_NOW,
+  OLD_PROPOSALS_HEADING, OLD_PROPOSALS_NOTE, RULES_HEADING, RULES_INTRO, SAVE_AS_RULE, savedRulesHeading, SEE_TASK_LINK, visibleTo,
+} from "@/lib/strings";
 import { approveRule, deleteRule, discardDraft, editRule, lockRule, resolveRule, retireRule } from "./actions";
-import { logSafeError } from "@/lib/safe-log";
 
 export const dynamic = "force-dynamic";
 
 const STRENGTH_LABEL: Record<string, string> = { prefer: "Prefer", always: "Always", never: "Never" };
+const ruleTextStyle = { fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: "var(--size-card-title)", lineHeight: 1.2, whiteSpace: "pre-wrap", margin: "8px 0" } as const;
+const fullWidth = { width: "100%", marginTop: 8 } as const;
+const time = (d: Date) => `${d.toISOString().slice(0, 16).replace("T", " ")} UTC`;
 
 function EditForm({ rule }: { rule: RuleRecord }) {
   return (
@@ -48,36 +54,31 @@ function EditForm({ rule }: { rule: RuleRecord }) {
   );
 }
 
-function Details({ rule, scope, words }: { rule: RuleRecord; scope: string; words?: { taskId: string; note?: string; source?: "person" | "agent_reported" } | null }) {
+type Words = { taskId: string; note?: string; source?: "person" | "agent_reported" } | null;
+
+/** The rule's own details (when it applies, how strong) in a small muted line, and where the person's own words came from. */
+function Details({ rule, scope, words }: { rule: RuleRecord; scope: string; words?: Words }) {
   return (
     <>
-      <p style={{ whiteSpace: "pre-wrap", fontSize: "1.1rem" }}>{rule.text}</p>
-      <ul style={muted}>
-        <li>Applies to: {scope}</li>
-        <li>When: {rule.when}</li>
-        {rule.do ? <li>Do: {rule.do}</li> : null}
-        {rule.dont ? <li>Do not: {rule.dont}</li> : null}
-        <li>Strength: {STRENGTH_LABEL[rule.strength] ?? rule.strength}</li>
-        {rule.status === "proposed" && rule.because ? <li>Why: {rule.because}</li> : null}
-      </ul>
+      <p style={muted}>
+        Applies to: {scope} · When: {rule.when}
+        {rule.do ? <> · Do: {rule.do}</> : null}
+        {rule.dont ? <> · Do not: {rule.dont}</> : null} · Strength: {STRENGTH_LABEL[rule.strength] ?? rule.strength}
+      </p>
       {words ? (
         <>
-        <p style={muted}>
           {words.source === "agent_reported" ? (
-            <>
-              Why it was proposed: <strong>your agent reported</strong> that you said{words.note ? <>: “{words.note}”</> : null}. This came from the agent, not from you, so please check it matches what you meant.{" "}
-            </>
-          ) : (
-            <>
-              Why it was proposed: your feedback{words.note ? <>, in your words: “{words.note}”</> : null}.{" "}
-            </>
-          )}
-        </p>
-        <p>
-          <a href={`/feed#task-${words.taskId}`} style={{ display: "inline-block", minHeight: 44, lineHeight: "44px" }}>
-            See the task and feedback it came from
-          </a>
-        </p>
+            <p style={muted}>
+              Why it was proposed: <strong>your agent reported</strong> that you said{words.note ? <>: “{words.note}”</> : null}. This came from the agent, not from you, so please check it matches what you meant.
+            </p>
+          ) : words.note ? (
+            <p style={muted}>In your words: “{words.note}”</p>
+          ) : null}
+          <p>
+            <a href={`/feed#task-${words.taskId}`} style={{ display: "inline-block", minHeight: 44, lineHeight: "44px" }}>
+              {SEE_TASK_LINK}
+            </a>
+          </p>
         </>
       ) : null}
     </>
@@ -87,17 +88,24 @@ function Details({ rule, scope, words }: { rule: RuleRecord; scope: string; word
 export default async function Rules({ searchParams }: { searchParams: Promise<{ message?: string; saved?: string; draft?: string }> }) {
   const person = await requireReady();
   const q = await searchParams;
-  await rulesFor(person.id).purgeExpiredDrafts().catch((error) => { logSafeError(error, "page:rules"); return 0; }); // drafts nobody decided on are deleted, not kept waiting
+  await rulesFor(person.id).purgeExpiredDrafts().catch(() => 0); // drafts nobody decided on are deleted, not kept waiting
   const [rules, agents] = await Promise.all([rulesFor(person.id).list(), agentsFor(person.id).list()]);
   const agentName = new Map(agents.map((a) => [a.id, a.name]));
   const scopeLabel = (s: string) => (s === "all" ? "all your agents" : `only ${agentName.get(s.replace("agent:", "")) ?? "one agent"}`);
 
-  // The person's own words behind each proposal, for their eyes only.
+  // The person's own words behind each proposal, for their eyes only, and where a saved rule came from.
   const fb = feedbackFor(person.id);
-  const wordsFor = async (r: RuleRecord) => {
+  const wordsFor = async (r: RuleRecord): Promise<Words> => {
     if (!r.sourceFeedbackId) return null;
     const f = await fb.getWithNote(r.sourceFeedbackId);
     return f ? { taskId: f.taskId, note: f.note, source: f.source } : null;
+  };
+  const originOf = async (r: RuleRecord): Promise<{ agent: string | null; when: string | null }> => {
+    if (!r.sourceFeedbackId) return { agent: null, when: null };
+    const f = await fb.getWithNote(r.sourceFeedbackId);
+    if (!f) return { agent: null, when: null };
+    const task = await tasksFor(person.id).get(f.taskId);
+    return { agent: task ? agentName.get(task.connectionId) ?? null : null, when: time(f.createdAt) };
   };
 
   const newest = (a: RuleRecord, b: RuleRecord) => b.createdAt.getTime() - a.createdAt.getTime();
@@ -111,48 +119,58 @@ export default async function Rules({ searchParams }: { searchParams: Promise<{ 
   const draftWords = draft ? await wordsFor(draft) : null;
   const olderWords = await Promise.all(older.map(wordsFor));
   const justSaved = q.saved ? live.find((r) => r.id === q.saved) : undefined;
+  const justSavedOrigin = justSaved ? await originOf(justSaved) : null;
 
-  const proposal = (r: RuleRecord, words: Awaited<ReturnType<typeof wordsFor>>) => {
+  const proposal = (r: RuleRecord, words: Words) => {
     const overlaps = overlapsFor(r, rules);
     const blocked = hasContradiction(overlaps);
     return (
-      <article key={r.id} id={`proposal-${r.id}`} style={{ ...card, borderWidth: 3 }} aria-label="Proposed rule">
+      <article key={r.id} id={`proposal-${r.id}`} style={cardNew} aria-label="Proposed rule">
+        <p style={{ ...smallCaps, color: "var(--blue)", margin: 0 }}>{DRAFT_HEADING}</p>
+        <p style={ruleTextStyle}>{r.text}</p>
+        {r.because ? <p>{r.because}</p> : null}
         <Details rule={r} scope={scopeLabel(r.scope)} words={words} />
+        <p>
+          <strong>{AGENTS_CANNOT_SEE_DRAFT}</strong>
+        </p>
+        <p style={muted}>{DRAFT_NOTE}</p>
         <ConflictPanel rule={r} overlaps={overlaps} resolve={resolveRule} scopeLabel={scopeLabel} />
-        <div>
-          {blocked ? (
-            <p style={muted}>To save this rule, choose replace, keep both, or merge above. Or tap Not now.</p>
-          ) : (
-            <>
-              <form action={approveRule} style={{ display: "inline" }}>
-                <input type="hidden" name="id" value={r.id} />
-                <button type="submit" style={button}>
-                  {SAVE_AS_RULE}
-                </button>
-              </form>{" "}
-              <form action={approveRule} style={{ display: "inline" }}>
-                <input type="hidden" name="id" value={r.id} />
-                <input type="hidden" name="lock" value="yes" />
-                <button type="submit" style={button}>
-                  {SAVE_AS_RULE} and lock
-                </button>
-              </form>{" "}
-            </>
+        {blocked ? (
+          <p style={muted}>To save this rule, choose replace, keep both, or merge above. Or tap {NOT_NOW}.</p>
+        ) : (
+          <>
+            <form action={approveRule}>
+              <input type="hidden" name="id" value={r.id} />
+              <button type="submit" className="btn-primary" style={{ ...primaryButton, ...fullWidth }}>
+                {SAVE_AS_RULE}
+              </button>
+            </form>
+            <form action={approveRule}>
+              <input type="hidden" name="id" value={r.id} />
+              <input type="hidden" name="lock" value="yes" />
+              <button type="submit" style={{ ...button, ...fullWidth }}>
+                {SAVE_AS_RULE} and lock
+              </button>
+            </form>
+          </>
+        )}
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 8, alignItems: "flex-start" }}>
+          {blocked ? null : (
+            <details style={{ flex: "1 1 160px" }}>
+              <summary className="as-button" style={{ justifyContent: "center" }}>
+                {EDIT_THEN_APPROVE}
+              </summary>
+              <EditForm rule={r} />
+            </details>
           )}
-          <form action={discardDraft} style={{ display: "inline" }}>
+          <form action={discardDraft} style={{ flex: "1 1 120px" }}>
             <input type="hidden" name="id" value={r.id} />
-            <button type="submit" style={button}>
-              Not now
+            <button type="submit" style={{ ...button, width: "100%" }}>
+              {NOT_NOW}
             </button>
           </form>
         </div>
         <p style={muted}>Locking makes a rule win over any other rule that overlaps it.</p>
-        {blocked ? null : (
-          <details>
-            <summary>Edit, then approve</summary>
-            <EditForm rule={r} />
-          </details>
-        )}
       </article>
     );
   };
@@ -160,57 +178,60 @@ export default async function Rules({ searchParams }: { searchParams: Promise<{ 
   return (
     <main style={page}>
       <Nav />
-      <h1>Your rules</h1>
-      <p>{RULES_INTRO}</p>
-      {q.message ? <Notice>{q.message}</Notice> : null}
+      <h1>{RULES_HEADING}</h1>
+      <p style={muted}>{RULES_INTRO}</p>
+      {q.message ? q.saved ? <Banner>{q.message}</Banner> : <Notice>{q.message}</Notice> : null}
       {justSaved ? (
-        <section style={{ ...card, borderWidth: 3 }} aria-label="The rule you just saved">
-          <p style={muted}>The rule you just saved. It moved down into the list of rules your agents can see: <a href={`#rule-${justSaved.id}`}>go to it</a>.</p>
-          <p style={{ whiteSpace: "pre-wrap", fontSize: "1.1rem" }}>{justSaved.text}</p>
+        <section style={cardNew} aria-label="The rule you just saved">
+          <p style={{ ...smallCaps, color: "var(--blue)", margin: 0 }}>{JUST_SAVED_LABEL}</p>
+          <p style={ruleTextStyle}>{justSaved.text}</p>
+          <p>{justSavedFrom(justSavedOrigin?.agent ?? null, justSavedOrigin?.when ?? null)}</p>
+          <p>
+            {visibleTo(whoCanSeeRule(agents, justSaved.scope))}. {JUST_SAVED_ADVICE}
+          </p>
+          <p>
+            <a href={`#rule-${justSaved.id}`}>Go to it in your saved rules</a>
+          </p>
         </section>
       ) : null}
 
       {q.draft && !draft ? <Notice>{DRAFT_GONE}</Notice> : null}
-      {draft ? (
-        <section aria-label={DRAFT_HEADING}>
-          <h2>{DRAFT_HEADING}</h2>
-          <p style={muted}>{DRAFT_NOTE}</p>
-          {proposal(draft, draftWords)}
-        </section>
-      ) : null}
+      {draft ? <section aria-label={DRAFT_HEADING}>{proposal(draft, draftWords)}</section> : null}
 
       {older.length > 0 ? (
         <section aria-label={OLD_PROPOSALS_HEADING}>
-          <h2>{OLD_PROPOSALS_HEADING}</h2>
+          <p style={smallCaps}>{OLD_PROPOSALS_HEADING}</p>
           <p style={muted}>{OLD_PROPOSALS_NOTE}</p>
           {older.map((r, i) => proposal(r, olderWords[i]))}
         </section>
       ) : null}
 
-      <h2>Rules your agents can see</h2>
-      {live.length === 0 ? <p style={muted}>None yet. No agent sees a rule until you approve one.</p> : null}
+      <h2 style={{ marginTop: 24 }}>{savedRulesHeading(live.length)}</h2>
+      {live.length === 0 ? <p style={muted}>{NO_SAVED_RULES}</p> : null}
       {live.map((r) => (
         <article
           key={r.id}
           id={`rule-${r.id}`}
-          style={r.id === q.saved ? { ...card, borderWidth: 3, scrollMarginTop: "1rem" } : { ...card, scrollMarginTop: "1rem" }}
+          style={{ ...(r.id === q.saved ? cardNew : card), scrollMarginTop: "1rem" }}
           aria-label={r.status === "locked" ? "Locked rule" : "Active rule"}
         >
           <p style={muted}>
-            {r.status === "locked" ? "🔒 Locked" : "Active"} · version {r.version}
+            {r.status === "locked" ? "Locked" : "Active"} · version {r.version}
             {r.approvedAt ? ` · approved ${r.approvedAt.toISOString().slice(0, 10)}` : ""}
           </p>
+          <p style={{ fontWeight: 600, whiteSpace: "pre-wrap", margin: "4px 0" }}>{r.text}</p>
+          <p style={muted}>{visibleTo(whoCanSeeRule(agents, r.scope))}</p>
           <Details rule={r} scope={scopeLabel(r.scope)} />
-          <div>
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
             {r.status === "active" ? (
-              <form action={lockRule} style={{ display: "inline" }}>
+              <form action={lockRule}>
                 <input type="hidden" name="id" value={r.id} />
                 <button type="submit" style={button}>
                   Lock
                 </button>
               </form>
-            ) : null}{" "}
-            <form action={retireRule} style={{ display: "inline" }}>
+            ) : null}
+            <form action={retireRule}>
               <input type="hidden" name="id" value={r.id} />
               <button type="submit" style={button}>
                 Stop using this rule
@@ -218,14 +239,16 @@ export default async function Rules({ searchParams }: { searchParams: Promise<{ 
             </form>
           </div>
           <details>
-            <summary>Edit, then approve</summary>
+            <summary>{EDIT_THEN_APPROVE}</summary>
             <EditForm rule={r} />
           </details>
           <form action={deleteRule} style={{ marginTop: "0.5rem" }}>
-              <input type="hidden" name="id" value={r.id} />
-              <button type="submit" style={button}>Delete this rule</button>
-              <span style={muted}> {AGENT_MEMORY_NOTE}</span>
-            </form>
+            <input type="hidden" name="id" value={r.id} />
+            <button type="submit" style={button}>
+              Delete this rule
+            </button>
+            <span style={muted}> {AGENT_MEMORY_NOTE}</span>
+          </form>
         </article>
       ))}
 
@@ -235,12 +258,15 @@ export default async function Rules({ searchParams }: { searchParams: Promise<{ 
           {retired.map((r) => (
             <article key={r.id} style={card} aria-label="Retired rule">
               <p style={muted}>Version {r.version} · not shown to any agent</p>
+              <p style={{ fontWeight: 600, whiteSpace: "pre-wrap" }}>{r.text}</p>
               <Details rule={r} scope={scopeLabel(r.scope)} />
               <form action={deleteRule} style={{ marginTop: "0.5rem" }}>
-              <input type="hidden" name="id" value={r.id} />
-              <button type="submit" style={button}>Delete this rule</button>
-              <span style={muted}> {AGENT_MEMORY_NOTE}</span>
-            </form>
+                <input type="hidden" name="id" value={r.id} />
+                <button type="submit" style={button}>
+                  Delete this rule
+                </button>
+                <span style={muted}> {AGENT_MEMORY_NOTE}</span>
+              </form>
             </article>
           ))}
         </details>

@@ -2,7 +2,7 @@ import { agentsFor, rulesFor, scoringFor, tasksFor } from "@/db/production";
 import { TASK_CATEGORIES } from "@/lib/tasks";
 import { requireReady } from "@/lib/session";
 import { button, card, field, muted, Nav, Notice, page } from "../ui";
-import { AGENT_MEMORY_NOTE, FEED_NOTE } from "@/lib/strings";
+import { AGENT_MEMORY_NOTE, FEED_HEADING, FEED_NOTE, FEED_SUBLINE } from "@/lib/strings";
 import { Checks } from "./Checks";
 import { deleteTaskRecord } from "./actions";
 import { FeedbackForm } from "./FeedbackForm";
@@ -62,7 +62,8 @@ export default async function Feed({
   return (
     <main style={page}>
       <Nav />
-      <h1>What your agents did</h1>
+      <h1>{FEED_HEADING}</h1>
+      <p>{FEED_SUBLINE}</p>
       {q.message ? <Notice>{q.message}</Notice> : null}
       <p style={muted}>{FEED_NOTE}</p>
 
