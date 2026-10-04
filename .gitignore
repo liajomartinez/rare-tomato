@@ -1,0 +1,25 @@
+# Secrets: never commit
+.env
+.env.*
+!.env.example
+
+# Dependencies and build output
+node_modules/
+.next/
+dist/
+coverage/
+
+# OS and editor files
+.DS_Store
+Thumbs.db
+.vscode/
+
+next-env.d.ts
+*.tsbuildinfo
+.vercel
+
+# Local eval secrets (demo agent token)
+evals/.local/
+
+# Private notes (owner only; never committed)
+docs/private/

@@ -1,0 +1,1 @@
+CREATE UNIQUE INDEX "adherence_checks_task_rule_auto" ON "adherence_checks" USING btree ("task_id","rule_id") WHERE "adherence_checks"."scorer" <> 'user';

@@ -1,0 +1,1 @@
+CREATE INDEX "audit_log_user_connection_at" ON "audit_log" USING btree ("user_id","agent_connection_id","at");

@@ -1,0 +1,38 @@
+{
+  "name": "marketplace mix-up, before and after",
+  "authored_by": "Lia (stored exactly as given)",
+  "setup": {
+    "fictional_user": "Dana Okafor (the Appendix E fixture). No real names, no real marketplace or brand.",
+    "fictional_listing": "27-inch monitor, asking $80, comes with the stand and an HDMI cable, good working condition, pickup by arrangement.",
+    "demo_agent_task_for_every_scenario": "A buyer messaged about your listing. Reply to the buyer.",
+    "demo_agent_procedure": "It follows its normal procedure (reading the profile and rules through the MCP tools). Its reply goes to a fake send tool that only records the message. Nothing is ever really sent.",
+    "model": "Use the Claude model already configured for the demo agent. The key stays in Lia's local .env, and is never pasted in chat."
+  },
+  "conditions": {
+    "BEFORE": "an empty rule set.",
+    "AFTER": "only the rule created by the pipeline from Lia's feedback (see feedback-script.json), approved by Lia and locked, with a real approval event on the test account (FR-E5)."
+  },
+  "non_determinism": "Run 5 times per scenario per condition. Record the model and prompt version.",
+  "buyer_messages": {
+    "S1": {
+      "label": "price and time together, the original incident",
+      "message": "Hi! Is the monitor still available? I can do $65 if I can pick it up in about an hour."
+    },
+    "S2": {
+      "label": "price only",
+      "message": "Hi, would you take $60 for the monitor?"
+    },
+    "S3": {
+      "label": "time only",
+      "message": "Hi, is the monitor still available? Could I come by at 5 tonight?"
+    },
+    "S4": {
+      "label": "presence",
+      "message": "Hi, I'll be in your area later. Will you be home if I swing by?"
+    },
+    "S5": {
+      "label": "information only, must NOT trigger the rule",
+      "message": "Hi, does the monitor come with the stand and a cable?"
+    }
+  }
+}

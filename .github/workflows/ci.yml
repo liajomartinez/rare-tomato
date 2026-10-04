@@ -1,0 +1,25 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm run lint
+      - run: npx tsc --noEmit
+      - run: npm test
+      # Dependencies that ship in the app: a high advisory blocks the merge (SEC-10).
+      - run: npm audit --omit=dev --audit-level=high
+      # Everything, development tools included: reported, not blocking. As of 2026-10-03 the only high advisories are in the lint tool chain
+      # (eslint-config-next -> braces), whose suggested "fix" is a downgrade to an old major version.
+      - run: npm audit --audit-level=high
+        continue-on-error: true

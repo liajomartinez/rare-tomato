@@ -1,0 +1,286 @@
+{
+  "labeled_by": "Lia",
+  "placeholder": false,
+  "expectations": {
+    "A-001": {
+      "should_propose_rule": null,
+      "category": null,
+      "scope": null,
+      "must_capture_any": null,
+      "must_not_include": null
+    },
+    "A-002": {
+      "should_propose_rule": null,
+      "category": null,
+      "scope": null,
+      "must_capture_any": null,
+      "must_not_include": null
+    },
+    "A-003": {
+      "should_propose_rule": null,
+      "category": null,
+      "scope": null,
+      "must_capture_any": null,
+      "must_not_include": null
+    },
+    "A-004": {
+      "should_propose_rule": null,
+      "category": null,
+      "scope": null,
+      "must_capture_any": null,
+      "must_not_include": null
+    },
+    "A-005": {
+      "should_propose_rule": null,
+      "category": null,
+      "scope": null,
+      "must_capture_any": null,
+      "must_not_include": null
+    },
+    "A-006": {
+      "should_propose_rule": null,
+      "category": null,
+      "scope": null,
+      "must_capture_any": null,
+      "must_not_include": null
+    },
+    "A-007": {
+      "should_propose_rule": null,
+      "category": null,
+      "scope": null,
+      "must_capture_any": null,
+      "must_not_include": null
+    },
+    "A-008": {
+      "should_propose_rule": null,
+      "category": null,
+      "scope": null,
+      "must_capture_any": null,
+      "must_not_include": null
+    },
+    "A-009": {
+      "should_propose_rule": null,
+      "category": null,
+      "scope": null,
+      "must_capture_any": null,
+      "must_not_include": null
+    },
+    "A-010": {
+      "should_propose_rule": null,
+      "category": null,
+      "scope": null,
+      "must_capture_any": null,
+      "must_not_include": null
+    },
+    "A-011": {
+      "should_propose_rule": null,
+      "category": null,
+      "scope": null,
+      "must_capture_any": null,
+      "must_not_include": null
+    },
+    "A-012": {
+      "should_propose_rule": null,
+      "category": null,
+      "scope": null,
+      "must_capture_any": null,
+      "must_not_include": null
+    },
+    "A-013": {
+      "should_propose_rule": null,
+      "category": null,
+      "scope": null,
+      "must_capture_any": null,
+      "must_not_include": null
+    },
+    "A-014": {
+      "should_propose_rule": null,
+      "category": null,
+      "scope": null,
+      "must_capture_any": null,
+      "must_not_include": null
+    },
+    "A-015": {
+      "should_propose_rule": null,
+      "category": null,
+      "scope": null,
+      "must_capture_any": null,
+      "must_not_include": null
+    },
+    "A-016": {
+      "should_propose_rule": null,
+      "category": null,
+      "scope": null,
+      "must_capture_any": null,
+      "must_not_include": null
+    },
+    "A-017": {
+      "should_propose_rule": null,
+      "category": null,
+      "scope": null,
+      "must_capture_any": null,
+      "must_not_include": null
+    },
+    "A-018": {
+      "should_propose_rule": null,
+      "category": null,
+      "scope": null,
+      "must_capture_any": null,
+      "must_not_include": null
+    },
+    "A-019": {
+      "should_propose_rule": null,
+      "category": null,
+      "scope": null,
+      "must_capture_any": null,
+      "must_not_include": null
+    },
+    "A-020": {
+      "should_propose_rule": null,
+      "category": null,
+      "scope": null,
+      "must_capture_any": null,
+      "must_not_include": null
+    },
+    "A-021": {
+      "should_propose_rule": null,
+      "category": null,
+      "scope": null,
+      "must_capture_any": null,
+      "must_not_include": null
+    },
+    "A-022": {
+      "should_propose_rule": null,
+      "category": null,
+      "scope": null,
+      "must_capture_any": null,
+      "must_not_include": null
+    },
+    "A-023": {
+      "should_propose_rule": null,
+      "category": null,
+      "scope": null,
+      "must_capture_any": null,
+      "must_not_include": null
+    },
+    "A-024": {
+      "should_propose_rule": null,
+      "category": null,
+      "scope": null,
+      "must_capture_any": null,
+      "must_not_include": null
+    },
+    "A-025": {
+      "should_propose_rule": null,
+      "category": null,
+      "scope": null,
+      "must_capture_any": null,
+      "must_not_include": null
+    },
+    "A-026": {
+      "should_propose_rule": null,
+      "category": null,
+      "scope": null,
+      "must_capture_any": null,
+      "must_not_include": null
+    },
+    "A-027": {
+      "should_propose_rule": null,
+      "category": null,
+      "scope": null,
+      "must_capture_any": null,
+      "must_not_include": null
+    },
+    "A-028": {
+      "should_propose_rule": null,
+      "category": null,
+      "scope": null,
+      "must_capture_any": null,
+      "must_not_include": null
+    },
+    "A-029": {
+      "should_propose_rule": null,
+      "category": null,
+      "scope": null,
+      "must_capture_any": null,
+      "must_not_include": null
+    },
+    "A-030": {
+      "should_propose_rule": null,
+      "category": null,
+      "scope": null,
+      "must_capture_any": null,
+      "must_not_include": null
+    },
+    "A-031": {
+      "should_propose_rule": null,
+      "category": null,
+      "scope": null,
+      "must_capture_any": null,
+      "must_not_include": null
+    },
+    "A-032": {
+      "should_propose_rule": null,
+      "category": null,
+      "scope": null,
+      "must_capture_any": null,
+      "must_not_include": null
+    },
+    "A-033": {
+      "should_propose_rule": null,
+      "category": null,
+      "scope": null,
+      "must_capture_any": null,
+      "must_not_include": null
+    },
+    "A-034": {
+      "should_propose_rule": null,
+      "category": null,
+      "scope": null,
+      "must_capture_any": null,
+      "must_not_include": null
+    },
+    "A-035": {
+      "should_propose_rule": null,
+      "category": null,
+      "scope": null,
+      "must_capture_any": null,
+      "must_not_include": null
+    },
+    "A-036": {
+      "should_propose_rule": null,
+      "category": null,
+      "scope": null,
+      "must_capture_any": null,
+      "must_not_include": null
+    },
+    "A-037": {
+      "should_propose_rule": null,
+      "category": null,
+      "scope": null,
+      "must_capture_any": null,
+      "must_not_include": null
+    },
+    "A-038": {
+      "should_propose_rule": null,
+      "category": null,
+      "scope": null,
+      "must_capture_any": null,
+      "must_not_include": null
+    },
+    "A-039": {
+      "should_propose_rule": null,
+      "category": null,
+      "scope": null,
+      "must_capture_any": null,
+      "must_not_include": null
+    },
+    "A-040": {
+      "should_propose_rule": null,
+      "category": null,
+      "scope": null,
+      "must_capture_any": null,
+      "must_not_include": null
+    }
+  }
+}

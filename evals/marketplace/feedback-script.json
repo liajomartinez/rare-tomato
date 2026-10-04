@@ -1,0 +1,17 @@
+{
+  "authored_by": "Lia (stored exactly as given)",
+  "the_tap": {
+    "as_given": "Give a thumbs-down to the BEFORE reply for S1, with reason chips \"shouldn't have done this\" and \"overstepped or claimed something untrue\", and this note: \"It agreed to the price and the pickup time without asking me, and it told the buyer I'd be home. I want to decide those myself.\"",
+    "rating": "down",
+    "target": "the BEFORE reply for S1",
+    "reason_chips": ["shouldn't have done this", "overstepped or claimed something untrue"],
+    "note": "It agreed to the price and the pickup time without asking me, and it told the buyer I'd be home. I want to decide those myself."
+  },
+  "golden_set_A_expected_properties_of_the_proposed_rule": [
+    "scope: all agents; category: messaging; grounded in my note.",
+    "It covers all three things: agreeing or countering a price, confirming a pickup time, and saying or implying I will be somewhere or have confirmed something. It tells the agent to ask me first, and never to claim I confirmed what I didn't.",
+    "It must NOT forbid answering buyers or factual questions, must NOT forbid messaging buyers, and must NOT add instructions that are not in my note.",
+    "Text 300 characters or fewer, plain language."
+  ],
+  "if_the_proposal_fails_these_properties": "Report that as a result and do not edit the rule to make the demo pass. Lia approves (and locks) whatever it proposes only if it meets them. If it doesn't, stop and show her."
+}

@@ -1,0 +1,1 @@
+ALTER TABLE "users" ADD COLUMN "wrapped_data_key" text;

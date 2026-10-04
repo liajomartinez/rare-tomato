@@ -1,0 +1,1 @@
+ALTER TABLE "profile_facts" ADD COLUMN "allowed_agent_ids" uuid[];
