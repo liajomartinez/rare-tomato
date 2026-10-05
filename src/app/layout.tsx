@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import Link from "next/link";
+import { baseUrl } from "../lib/base-address";
 import { BROWSER_THEME_COLOR } from "./brand-colors";
 import "./tokens/fonts.css";
 import "./tokens/colors.css";
@@ -16,7 +17,17 @@ export const metadata: Metadata = {
   title: "Rare Tomato",
   applicationName: "Rare Tomato",
   appleWebApp: { capable: true, title: "Rare Tomato", statusBarStyle: "default" },
-  icons: { icon: "/icons/icon-192.png", apple: "/icons/apple-touch-icon.png" },
+  metadataBase: new URL(baseUrl()),
+  // favicon.ico, opengraph-image.png and twitter-image.png are picked up from this folder by Next's file conventions. The PNGs are made by scripts/make-brand-icons.mjs.
+  icons: {
+    icon: [
+      { url: "/icons/icon-32.png", sizes: "32x32", type: "image/png" },
+      { url: "/icons/icon-16.png", sizes: "16x16", type: "image/png" },
+    ],
+    apple: { url: "/icons/apple-touch-icon.png", sizes: "180x180", type: "image/png" },
+  },
+  openGraph: { siteName: "Rare Tomato", type: "website" },
+  twitter: { card: "summary_large_image" },
 };
 
 export const viewport: Viewport = { themeColor: BROWSER_THEME_COLOR, width: "device-width", initialScale: 1 };

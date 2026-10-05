@@ -2,8 +2,7 @@ import type { MetadataRoute } from "next";
 import { BROWSER_THEME_COLOR, INSTALLED_BACKGROUND_COLOR } from "./brand-colors";
 
 // The web app manifest (SPEC FR-K1): a home-screen icon and a full-screen window. No offline mode and no push notifications (P2).
-// The icons are PLACEHOLDERS drawn by scripts/make-icons.mjs; the real art is open item O17. The maskable icon keeps its mark inside the
-// centre safe area. Sign-in inside the installed app has not been checked on a real phone yet (FR-K3, on Lia's list).
+// The icons are the real tomato mark, made by scripts/make-brand-icons.mjs. The maskable icon keeps its mark inside the centre safe area. Sign-in inside the installed app has not been checked on a real phone yet (FR-K3, on Lia's list).
 export default function manifest(): MetadataRoute.Manifest {
   return {
     id: "/",
