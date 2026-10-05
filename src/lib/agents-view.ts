@@ -2,7 +2,7 @@ import type { Db } from "@/db/client";
 import { tenantDb } from "@/db/tenant";
 import type { AgentType, Connection } from "./connections";
 import { effectiveScopes } from "./connections";
-import { setupState, type AuditCall, type SetupState } from "./onboarding";
+import { callsSeen, setupState, WATCHED_ACTIONS, type AuditCall, type CallsSeen, type SetupState } from "./onboarding";
 import type { Category } from "./profile";
 
 // What the Agents and Profile screens show. Never includes tokens or anything secret.
@@ -27,6 +27,8 @@ export interface AgentView {
   notSeenRecently: boolean;
   /** From our own audit log only: has a real get_rules or get_care_profile request from this connection reached us (see onboarding.ts). */
   setup: SetupState;
+  /** The newest real get_rules, get_care_profile and log_task request from this connection, from our audit log (what the setup check watches for). */
+  calls: CallsSeen;
 }
 
 export const NOT_SEEN_DAYS = 7;
@@ -41,7 +43,7 @@ export async function listAgents(db: Db, userId: string, now = new Date()): Prom
   const t = tenantDb(db, userId);
   const [rows, latestCalls, tasks] = await Promise.all([
     t.agentConnections.list() as Promise<Connection[]>,
-    t.latestAuditByConnection(["get_rules", "get_care_profile"]),
+    t.latestAuditByConnection([...WATCHED_ACTIONS]),
     t.tasks.list() as Promise<{ agentConnectionId: string; occurredAt: Date }[]>,
   ]);
   const latest = <T,>(items: T[], id: (x: T) => string | null, when: (x: T) => Date) => {
@@ -69,6 +71,7 @@ export async function listAgents(db: Db, userId: string, now = new Date()): Prom
       lastRulesFetchedAt: rulesAt.get(c.id) ?? null,
       lastTaskAt: taskAt.get(c.id) ?? null,
       setup: setupState(c.id, latestCalls as AuditCall[]),
+      calls: callsSeen(c.id, latestCalls as AuditCall[]),
       notSeenRecently: statusOf(c, now) === "active" && Boolean(c.lastSeenAt) && (c.lastSeenAt as Date).getTime() < staleBefore,
     }))
     .sort((a, b) => a.name.localeCompare(b.name));

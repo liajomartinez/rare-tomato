@@ -1,21 +1,21 @@
+import Link from "next/link";
 import { agentsFor } from "@/db/production";
-import { resourceUrl } from "@/lib/base-address";
 import type { AgentView } from "@/lib/agents-view";
-import { placementFor } from "@/lib/onboarding";
+import { attentionOf } from "@/lib/attention";
+import { needsFinishSetup } from "@/lib/onboarding";
+import { isGuided, shortDate, TYPE_LABEL } from "@/lib/platforms";
 import { requireReady } from "@/lib/session";
-import { UNASSIGNED_LIFETIME_DAYS } from "@/lib/connections";
-import { RULES_SHORT_NOTE, S, unconfirmedAgentNote } from "@/lib/strings";
-import { AgentAvatar, Banner, Nav, Notice, SignedInAs, Tag, WhoCanSee } from "../ui";
-import { CopyBlock } from "../care-sheet/CopyButton";
-import { Guides } from "./Guides";
+import { finishBody, messageBody, NO_CALLS_YET, S, TIMED_OUT_BODY } from "@/lib/strings";
+import { AgentAvatar, Nav, Notice, SignedInAs, StatusIcon, Tag, WhoCanSee } from "../ui";
 import { Health } from "./Health";
-import { MuseLimit, MuseTimedOut } from "./Muse";
-import { NextStepText, SetupStatus, StarterSteps } from "./Setup";
-import { changeAccess, confirmAgent, removeAgent, renameAgent, revokeAgent } from "./actions";
+import { changeAccess, reconnectAgent, removeAgent, renameAgent, revokeAgent } from "./actions";
 
 export const dynamic = "force-dynamic";
 
-const TYPE_LABEL: Record<string, string> = { claude: "Claude", chatgpt: "ChatGPT", muse: "Muse", grok: "Grok Bot", other: "Another agent" };
+// Your agents (SPEC B4), grouped by what the person has to do: Needs attention (waiting for a confirmation, setup not finished, connection timed out),
+// Connected, Disconnected (compact rows). The first Needs-attention card holds the one primary button. Empty sections are hidden. No tutorials inside
+// cards: Confirm and Finish setup each open a focused screen. Every date comes from OUR OWN records and never means an agent followed a rule.
+
 const SCOPE_LABEL: Record<string, string> = {
   "profile:basic": "Your preferences",
   "profile:contacts": "Your contacts",
@@ -24,69 +24,6 @@ const SCOPE_LABEL: Record<string, string> = {
   "tasks:write": "Record what it does",
 };
 const ALL_SCOPES = Object.keys(SCOPE_LABEL);
-const connectorAddress = () => resourceUrl();
-/** Whole hours since Muse was last heard from, once that is 2 or more; otherwise null. Quiet is normal for an agent that is only called when asked. */
-const QUIET_AFTER_HOURS = 2;
-function quietHours(lastSeen: Date | null, now = new Date()): number | null {
-  if (!lastSeen) return null;
-  const h = Math.floor((now.getTime() - lastSeen.getTime()) / 3_600_000);
-  return h >= QUIET_AFTER_HOURS ? h : null;
-}
-const shortWhen = (d: Date) => d.toLocaleString("en-GB", { day: "numeric", month: "short", hour: "numeric", minute: "2-digit", hour12: true, timeZone: "UTC" }).replace(",", "") + " UTC";
-
-function ConfirmForm({ agent, existing }: { agent: AgentView; existing: AgentView[] }) {
-  return (
-    <form action={confirmAgent} className="stack stack-3">
-      <input type="hidden" name="id" value={agent.id} />
-      <div className="field">
-        <label htmlFor={`type-${agent.id}`}>Which agent is this?</label>
-        <select id={`type-${agent.id}`} name="type" defaultValue={agent.suggestedType ?? ""} required>
-          <option value="" disabled>
-            Choose one
-          </option>
-          {Object.entries(TYPE_LABEL).map(([value, label]) => (
-            <option key={value} value={value}>
-              {label}
-            </option>
-          ))}
-        </select>
-      </div>
-      <div className="field">
-        <label htmlFor={`name-${agent.id}`}>What do you call it?</label>
-        <input id={`name-${agent.id}`} name="name" required maxLength={60} placeholder="For example: Marge" />
-      </div>
-      {existing.length > 0 ? (
-        <div className="field">
-          <label htmlFor={`replace-${agent.id}`}>Is this the same agent reconnecting?</label>
-          <select id={`replace-${agent.id}`} name="replaceId" defaultValue="">
-            <option value="">No, this is a new agent</option>
-            {existing.map((e) => (
-              <option key={e.id} value={e.id}>
-                This replaces my old {e.name} ({e.type ? TYPE_LABEL[e.type] : "agent"})
-              </option>
-            ))}
-          </select>
-        </div>
-      ) : null}
-      <fieldset>
-        <legend>Also let it read (optional)</legend>
-        <label>
-          <input type="checkbox" name="extra" value="profile:contacts" /> Your contacts
-        </label>
-        <br />
-        <label>
-          <input type="checkbox" name="extra" value="profile:family" /> Your family details
-        </label>
-        <p className="caption">By default it can read your preferences and your rules, and record what it does.</p>
-      </fieldset>
-      <div>
-        <button type="submit" className="btn-primary">
-          Yes, this is my agent
-        </button>
-      </div>
-    </form>
-  );
-}
 
 function ChangeSettings({ a }: { a: AgentView }) {
   return (
@@ -135,46 +72,34 @@ function ChangeSettings({ a }: { a: AgentView }) {
   );
 }
 
-function AgentCard({ a }: { a: AgentView }) {
-  const platform = a.type ? TYPE_LABEL[a.type] : "your agent";
-  const place = placementFor(a.type);
-  const muse = a.type === "muse";
-  const working = a.setup.kind === "working";
+/** One card in Needs attention: avatar, name, a status line with an icon, one sentence, one button. */
+function AttentionCard({
+  name, platform, experimental, status, icon, body, button,
+}: {
+  name: string;
+  platform?: string;
+  experimental?: boolean;
+  status: string;
+  icon: "outline" | "alert";
+  body: string;
+  button: React.ReactNode;
+}) {
   return (
-    <article className="card card-roomy" aria-label={a.name}>
+    <article className="card card-roomy" aria-label={name}>
       <div className="row row-nowrap">
-        <AgentAvatar name={a.name} />
+        <AgentAvatar name={name} />
         <div className="stack stack-0 grow">
-          <b style={{ font: "var(--font-name-lg)" }}>{a.name}</b>
-          <span className="caption">{platform}</span>
+          <b style={{ font: "var(--font-name-lg)" }}>{name}</b>
+          {platform ? <span className="caption">{platform}</span> : null}
         </div>
-        {muse ? <Tag strong>{S.muse.experimental}</Tag> : null}
+        {experimental ? <Tag strong>{S.agents.experimental}</Tag> : null}
       </div>
-      <SetupStatus agent={a} />
-      {muse ? (
-        <MuseLimit quietHours={quietHours(a.lastSeenAt)} />
-      ) : (
-        <>
-          <div className="next-box">
-            <span className="eyebrow">{S.agents.nextStep}</span>
-            <span className="strong-line">
-              <NextStepText agent={a} platform={platform} />
-            </span>
-            {!working ? (
-              <details className="btn-details" open={false}>
-                <summary className="as-button btn-sm">{S.agents.showSteps}</summary>
-                <div className="rule-above" style={{ marginTop: "var(--space-3)" }}>
-                  <StarterSteps agent={a} platform={platform} />
-                </div>
-              </details>
-            ) : null}
-          </div>
-          <div className="info">
-            <p>{place.optional ? S.onb.setup.guides["Grok Bot"].intro : S.starter.limit}</p>
-          </div>
-        </>
-      )}
-      <ChangeSettings a={a} />
+      <div className="status-line" role="status">
+        <StatusIcon kind={icon} />
+        <b>{status}</b>
+      </div>
+      <p className="caption">{body}</p>
+      {button}
     </article>
   );
 }
@@ -183,12 +108,74 @@ export default async function Agents({ searchParams }: { searchParams: Promise<{
   const person = await requireReady();
   const { message } = await searchParams;
   const agents = await agentsFor(person.id).list();
-  const waiting = agents.filter((a) => a.status === "unassigned");
-  const expired = agents.filter((a) => a.status === "expired");
+  const attention = attentionOf(agents);
   const active = agents.filter((a) => a.status === "active");
   const revoked = agents.filter((a) => a.status === "revoked");
   const readers = active.filter((a) => a.scopes.includes("rules:read")).map((a) => a.name);
-  const connectClass = waiting.length > 0 ? "btn" : "btn btn-primary";
+  const connected = active.filter((a) => !needsFinishSetup(a));
+  // The first Needs-attention card holds the one primary button on the screen; with nothing to attend to, "Connect an agent" is the primary.
+  const btnClass = (i: number) => `btn-block${i === 0 ? " btn-primary" : ""}`;
+
+  // Needs attention: confirmations first, then setup not finished, then timed out.
+  let i = 0;
+  const cards: React.ReactNode[] = [];
+  for (const a of attention.confirm) {
+    const platform = a.suggestedType ? TYPE_LABEL[a.suggestedType] : null;
+    cards.push(
+      <AttentionCard
+        key={a.id}
+        name={platform ?? "New agent"}
+        status={S.agents.needsConfirm}
+        icon="outline"
+        body={S.agents.waitingBody}
+        button={
+          <Link href={`/agents/confirm?agent=${a.id}`} prefetch={false} className={`btn ${btnClass(i++)}`}>
+            {S.agents.confirm(platform ?? "agent")}
+          </Link>
+        }
+      />,
+    );
+  }
+  for (const a of attention.finish) {
+    const platform = a.type ? TYPE_LABEL[a.type] : "";
+    const guided = isGuided(a.type);
+    cards.push(
+      <AttentionCard
+        key={a.id}
+        name={a.name}
+        platform={platform}
+        experimental={a.type === "muse"}
+        status={guided ? S.agents.setupNot : S.agents.finishSetup}
+        icon="outline"
+        body={guided ? finishBody(platform, a.name) : messageBody(a.name)}
+        button={
+          <Link href={`/agents/finish?agent=${a.id}`} prefetch={false} className={`btn ${btnClass(i++)}`}>
+            {S.agents.finishSetup}
+          </Link>
+        }
+      />,
+    );
+  }
+  for (const a of attention.timedOut) {
+    const platform = a.suggestedType ? TYPE_LABEL[a.suggestedType] : null;
+    cards.push(
+      <AttentionCard
+        key={a.id}
+        name={platform ?? "An agent"}
+        status={S.agents.timedOut}
+        icon="alert"
+        body={TIMED_OUT_BODY}
+        button={
+          <form action={reconnectAgent}>
+            <input type="hidden" name="id" value={a.id} />
+            <button type="submit" className={btnClass(i++)}>
+              {S.agents.reconnect}
+            </button>
+          </form>
+        }
+      />,
+    );
+  }
 
   const sec = (heading: string, children: React.ReactNode) => (
     <section className="stack stack-3" aria-label={heading}>
@@ -199,86 +186,78 @@ export default async function Agents({ searchParams }: { searchParams: Promise<{
 
   const main = (
     <div className="stack stack-5">
-      {waiting.length > 0
-        ? sec(
-            S.agents.waitingHeading,
-            waiting.map((a) => (
-              <section key={a.id} className="card card-ink card-roomy" aria-label="New agent">
-                <p className="eyebrow">{S.agents.newEyebrow}</p>
-                <h3>{a.suggestedType ? S.agents.looksLike(TYPE_LABEL[a.suggestedType]) : "New agent: which one is this?"}</h3>
-                <p>{S.agents.newBody}</p>
-                <p className="caption">{unconfirmedAgentNote(a.expiresAt ? shortWhen(a.expiresAt) : null, UNASSIGNED_LIFETIME_DAYS)}</p>
-                <details>
-                  <summary className="as-button btn-primary as-primary">{S.agents.check}</summary>
-                  <div className="rule-above" style={{ marginTop: "var(--space-3)" }}>
-                    <ConfirmForm agent={a} existing={[...active, ...revoked]} />
-                  </div>
-                </details>
-              </section>
-            )),
-          )
-        : null}
+      {cards.length > 0 ? sec(S.agents.attention, <div className="stack">{cards}</div>) : null}
 
-      {sec(
-        S.agents.connectedHeading,
-        active.length === 0 ? (
-          <p className="caption">
-            No agents are connected yet. After you add the address below in your agent, ask it to use the Rare Tomato tool once (for example: &ldquo;use the Rare
-            Tomato hello tool&rdquo;). It will appear above so you can confirm it. After you confirm it, start a new chat in that agent.
-          </p>
-        ) : (
-          <div className="stack">
-            {active.map((a) => (
-              <AgentCard key={a.id} a={a} />
-            ))}
-          </div>
-        ),
-      )}
-
-      {expired.length > 0
+      {connected.length > 0
         ? sec(
-            S.agents.timedOutHeading,
-            expired.map((a) =>
-              a.suggestedType === "muse" ? (
-                <MuseTimedOut key={a.id} id={a.id} removeAction={removeAgent} primary={waiting.length === 0} />
-              ) : (
-                <section key={a.id} className="card card-roomy">
-                  <p>An agent signed in but was not confirmed in time, so it was turned off.</p>
-                  <form action={removeAgent}>
-                    <input type="hidden" name="id" value={a.id} />
-                    <button type="submit">{S.agents.remove}</button>
-                  </form>
-                </section>
-              ),
-            ),
+            S.agents.connected,
+            <div className="stack">
+              {connected.map((a) => {
+                const platform = a.type ? TYPE_LABEL[a.type] : "your agent";
+                const muse = a.type === "muse";
+                return (
+                  <article key={a.id} className="card card-roomy" aria-label={a.name}>
+                    <div className="row row-nowrap">
+                      <AgentAvatar name={a.name} />
+                      <div className="stack stack-0 grow">
+                        <b style={{ font: "var(--font-name-lg)" }}>{a.name}</b>
+                        <span className="caption">{platform}</span>
+                      </div>
+                      {muse ? <Tag strong>{S.agents.experimental}</Tag> : null}
+                    </div>
+                    {a.setup.kind === "working" ? (
+                      <>
+                        <div className="status-line" role="status">
+                          <StatusIcon kind="check" />
+                          <b>{S.agents.working}</b>
+                        </div>
+                        <p className="caption">{S.agents.lastChecked(shortDate(a.setup.at))}</p>
+                      </>
+                    ) : (
+                      <p className="caption">{NO_CALLS_YET}</p>
+                    )}
+                    {muse ? (
+                      <div className="stack stack-2">
+                        <p className="caption">{S.agents.museNote}</p>
+                        <Link href="/start/setup?agent=muse&again=1" prefetch={false} className="btn btn-block">
+                          {S.agents.reconnect}
+                        </Link>
+                      </div>
+                    ) : null}
+                    <ChangeSettings a={a} />
+                  </article>
+                );
+              })}
+            </div>,
           )
         : null}
 
       {revoked.length > 0
         ? sec(
-            S.agents.disconnectedHeading,
-            revoked.map((a) => (
-              <section key={a.id} className="card card-roomy">
-                <p>{a.name} is disconnected and cannot get anything.</p>
-                <p className="caption">{S.agents.disconnectedNote}</p>
-                <form action={removeAgent}>
-                  <input type="hidden" name="id" value={a.id} />
-                  <button type="submit">{S.agents.remove}</button>
-                </form>
-              </section>
-            )),
+            S.agents.disconnected,
+            <div className="stack stack-2">
+              {revoked.map((a) => (
+                <div key={a.id} className="row row-between row-nowrap rule-row-compact">
+                  <div className="row row-nowrap">
+                    <AgentAvatar name={a.name} size="sm" />
+                    <span style={{ font: "var(--font-name)" }}>
+                      {a.name} {"·"} {S.agents.disconnected}
+                    </span>
+                  </div>
+                  <form action={removeAgent}>
+                    <input type="hidden" name="id" value={a.id} />
+                    <button type="submit" className="btn-quiet">
+                      {S.agents.remove}
+                    </button>
+                  </form>
+                </div>
+              ))}
+              <p className="caption">{S.agents.removeNote}</p>
+            </div>,
           )
         : null}
 
-      <section id="connect" className="stack stack-3" aria-label={S.agents.connect}>
-        <h2>{S.agents.connect}</h2>
-        <p>
-          Add this address as a custom connector or app in your agent (Claude, ChatGPT, Grok Bot, Muse or another). The agent will ask you to sign in. Then come
-          back here and confirm it.
-        </p>
-        <CopyBlock value={connectorAddress()} buttonLabel="Copy address" copiedLabel={S.onb.connect.s1.copied} />
-        <Guides address={connectorAddress()} />
-      </section>
+      {agents.length === 0 ? <p className="caption">No agents yet. Connect one to get started.</p> : null}
     </div>
   );
 
@@ -309,11 +288,10 @@ export default async function Agents({ searchParams }: { searchParams: Promise<{
           <aside className="stack">
             <div className="only-wide stack">{seeCard(S.agents.see)}</div>
             <WhoCanSee title={S.agents.whoTitle} agents={readers} note={S.agents.whoNote} />
-            <a className={`${connectClass} btn-block`} href="#connect">
+            <Link href="/start/agents" prefetch={false} className={`btn btn-block${attention.count === 0 ? " btn-primary" : ""}`}>
               {S.agents.connect}
-            </a>
-            <div className="hide-wide">{seeCard(S.agents.see.slice(0, 1))}</div>
-            <Banner tone="info">{RULES_SHORT_NOTE}</Banner>
+            </Link>
+            <div className="hide-wide">{seeCard(S.agents.see)}</div>
           </aside>
         </div>
         <SignedInAs email={person.email} />

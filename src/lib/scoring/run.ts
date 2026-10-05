@@ -197,11 +197,22 @@ export async function currentChecks(db: Db, userId: string): Promise<CheckView[]
   return out;
 }
 
+/** One agent's own rule-following figures, from the tasks that agent reported (agent-reported). */
+export interface AgentScore {
+  connectionId: string;
+  /** Tasks this agent reported in the last 14 days: what "Based on N reported tasks" counts. */
+  reportedTasks: number;
+  score: AdherenceScore;
+}
+
 export interface ScoreSummary {
   score: AdherenceScore;
   tasksLogged14d: number;
   needsAnswer: number;
+  /** The same figures for each agent that reported at least one task in the window, most reported tasks first. */
+  byAgent: AgentScore[];
 }
+
 
 /** What the Home screen shows: the score (null percent = still learning), how many tasks the coverage note counts, how many need an answer. */
 export async function scoreSummary(db: Db, userId: string, now = new Date()): Promise<ScoreSummary> {
@@ -209,9 +220,18 @@ export async function scoreSummary(db: Db, userId: string, now = new Date()): Pr
   const checks = await currentChecks(db, userId);
   const tasks = (await t.tasks.list()) as Row[];
   const since = now.getTime() - 14 * 24 * 3600 * 1000;
+  const recent = tasks.filter((r) => (r.occurredAt as Date).getTime() >= since);
+  const owner = new Map(tasks.map((r) => [r.id as string, r.agentConnectionId as string]));
+  const byAgent: AgentScore[] = [...new Set(recent.map((r) => r.agentConnectionId as string))].map((connectionId) => ({
+    connectionId,
+    reportedTasks: recent.filter((r) => r.agentConnectionId === connectionId).length,
+    score: adherenceScore(checks.filter((c) => owner.get(c.taskId) === connectionId).map((c) => ({ verdict: c.verdict, at: c.at, taskId: c.taskId })), now),
+  }));
+  byAgent.sort((a, b) => b.reportedTasks - a.reportedTasks || a.connectionId.localeCompare(b.connectionId));
   return {
     score: adherenceScore(checks.map((c) => ({ verdict: c.verdict, at: c.at, taskId: c.taskId })), now),
-    tasksLogged14d: tasks.filter((r) => (r.occurredAt as Date).getTime() >= since).length,
+    tasksLogged14d: recent.length,
     needsAnswer: checks.filter((c) => c.needsAnswer).length,
+    byAgent,
   };
 }

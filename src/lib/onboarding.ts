@@ -1,20 +1,15 @@
 import type { AgentType } from "./connections";
 
-// The starter-line step that comes after an agent is confirmed (design item O7, approved by Lia in autonomous run #2, 2026-10-03).
+// Setup state for an agent (design handoff rev 8: "Setup success comes from real tool calls, not from 'I did it' buttons").
 //
-// Why it exists: connected Claude and ChatGPT did not call Rare Tomato until the person's OWN instructions told them to
-// (the project notes: 6 of 6 prompts each with the line, none in earlier tests without it; a small test, so a direction only).
-//
-// What the state means, and what it does not: it comes ONLY from our own audit log. "Working" means a real get_rules or get_care_profile
-// request from that connection reached our server. "Not finished" means none has. We cannot see inside the agent, so nothing here says the
-// line was placed, or that an agent follows a rule it read.
+// What the state means, and what it does not: it comes ONLY from our own audit log. "Checked your rules" means a real get_rules request from that
+// connection reached our server. "Reported the test task" means a real log_task request did. We cannot see inside the agent, so nothing here says the
+// instruction was placed, or that an agent follows a rule it read. Refused calls are logged as "refused:<tool>" and never count.
 
-export { NO_TOOLS_CHECK_GOOD_REPLY, NO_TOOLS_CHECK_QUESTION, STARTER_LINE } from "./strings";
+export { AGENT_INSTRUCTION } from "./strings";
 
-/** Only these two calls end "Set up: not finished". Refused calls are logged as "refused:<tool>" and never count. */
-const COUNTED_ACTIONS = ["get_rules", "get_care_profile"] as const;
-
-export type SetupState = { kind: "not_finished" } | { kind: "working"; at: Date; asked: "rules" | "details" };
+/** The calls we look for. get_care_profile still counts as "has checked Rare Tomato" for the status line on Your agents (an agent that read details did call us). */
+export const WATCHED_ACTIONS = ["get_rules", "get_care_profile", "log_task"] as const;
 
 export interface AuditCall {
   action: string;
@@ -22,54 +17,58 @@ export interface AuditCall {
   agentConnectionId: string | null;
 }
 
-/** The state of one connection from its audit rows. Rows from other connections are ignored. */
-export function setupState(connectionId: string, calls: AuditCall[]): SetupState {
-  let latest: AuditCall | null = null;
-  let latestRules: AuditCall | null = null;
+/** The newest real call of each kind from ONE connection. Rows from other connections, and refused calls, are ignored. */
+export interface CallsSeen {
+  rules: Date | null;
+  details: Date | null;
+  task: Date | null;
+}
+
+export function callsSeen(connectionId: string, calls: AuditCall[]): CallsSeen {
+  const seen: CallsSeen = { rules: null, details: null, task: null };
   for (const c of calls) {
-    if (c.agentConnectionId !== connectionId || !(COUNTED_ACTIONS as readonly string[]).includes(c.action)) continue;
-    if (!latest || c.at > latest.at) latest = c;
-    if (c.action === "get_rules" && (!latestRules || c.at > latestRules.at)) latestRules = c;
+    if (c.agentConnectionId !== connectionId) continue;
+    const key = c.action === "get_rules" ? "rules" : c.action === "get_care_profile" ? "details" : c.action === "log_task" ? "task" : null;
+    if (!key) continue;
+    if (!seen[key] || c.at > (seen[key] as Date)) seen[key] = c.at;
   }
-  if (!latest) return { kind: "not_finished" };
-  return latestRules ? { kind: "working", at: latestRules.at, asked: "rules" } : { kind: "working", at: latest.at, asked: "details" };
+  return seen;
 }
 
-/** Only confirmed (active) agents are counted: an unconfirmed one cannot read anything yet. */
-export function agentsNeedingStep(agents: { status: string; type?: string | null; setup: SetupState }[]): number {
-  // Muse is experimental: the starter line is not a required step for it, so it is never counted here.
-  return agents.filter((a) => a.status === "active" && a.setup.kind === "not_finished" && a.type !== "muse").length;
+export type SetupState = { kind: "not_finished" } | { kind: "working"; at: Date; asked: "rules" | "details" };
+
+/** The state of one connection from its audit rows. "Working" means a real get_rules or get_care_profile request has reached our server. */
+export function setupState(connectionId: string, calls: AuditCall[]): SetupState {
+  const seen = callsSeen(connectionId, calls);
+  if (seen.rules) return { kind: "working", at: seen.rules, asked: "rules" };
+  if (seen.details) return { kind: "working", at: seen.details, asked: "details" };
+  return { kind: "not_finished" };
 }
 
-export interface StarterPlacement {
-  /** Plain words for where the person pastes the line. null means we have not checked (VERIFY): the screen says so instead of guessing. */
-  where: string | null;
-  /** false = VERIFY: the menu name has not been checked in the agent. Never guess menu names (CLAUDE.md, O11). */
-  whereVerified: boolean;
-  /** true = the step is optional (the agent looked at the rules on its own in every test) and there is no saved-instructions place to check. */
-  optional?: boolean;
-  /** One extra plain sentence about this agent's place, shown under the line. */
-  note?: string;
-  /** Shown as experimental: the starter line is not a required step, and the agent is never counted as "one step left" because of it. */
-  experimental?: boolean;
+/** How each platform is set up (handoff: Claude and ChatGPT use guided settings; Grok Bot and Muse use one pasted message). */
+export type SetupKind = "guided" | "message" | "none";
+export const SETUP_KIND: Record<AgentType, SetupKind> = { claude: "guided", chatgpt: "guided", grok: "message", muse: "message", other: "none" };
+export const setupKindFor = (type: AgentType | null): SetupKind => (type ? SETUP_KIND[type] : "none");
+
+/**
+ * The verify step for Claude and ChatGPT (3 states in the handoff): waiting (neither call seen), partly done (get_rules seen, log_task not),
+ * ready (both seen). A log_task with no get_rules is still "waiting": the agent has not checked the rules.
+ */
+export type VerifyState = "waiting" | "partial" | "ready";
+export function verifyState(seen: CallsSeen): VerifyState {
+  if (seen.rules && seen.task) return "ready";
+  if (seen.rules) return "partial";
+  return "waiting";
 }
 
-/** Kept as data so a menu change is a one-line change. Claude and ChatGPT are the two places the arm was run. */
-export const STARTER_PLACEMENT: Record<AgentType, StarterPlacement> = {
-  claude: { where: "Claude's preferences (the box for your own instructions to Claude in its settings)", whereVerified: true },
-  chatgpt: { where: "ChatGPT's custom instructions (in its settings, under personalization)", whereVerified: true },
-  // Muse (owner decision, 2026-10-03): shown as experimental. The standing line is NOT a required step for Muse and nobody is told to instruct it in
-  // every chat. Its status comes from the audit log like every agent's.
-  muse: { where: null, whereVerified: true, experimental: true },
-  // Grok Bot, checked by Lia on 2026-10-03: it runs only in the desktop app. The only rules screen found (Settings, General, Bot, Auto-review Rules) is
-  // about which actions are allowed automatically, NOT standing instructions, so the line must not go there. No instructions menu was found.
-  grok: {
-    where: "the start of a chat with Grok Bot",
-    whereVerified: true,
-    optional: true,
-    note: "No setup step is needed: Grok Bot looked at the rules on its own in every test. We found no place where it keeps standing instructions. Do not paste the line into Auto-review Rules: that screen only decides which actions Grok Bot may take without asking.",
-  },
-  other: { where: null, whereVerified: false },
-};
+/** Grok Bot and Muse show ready after the first real call (get_rules or log_task). */
+export const messageReady = (seen: CallsSeen): boolean => Boolean(seen.rules || seen.task);
 
-export const placementFor = (type: AgentType | null): StarterPlacement => (type ? STARTER_PLACEMENT[type] : STARTER_PLACEMENT.other);
+/** Does a confirmed agent still need a step from the person? Claude and ChatGPT until get_rules is seen; Grok Bot and Muse until any real call is seen. */
+export function needsFinishSetup(a: { status: string; type?: AgentType | null; calls: CallsSeen; setup: SetupState }): boolean {
+  if (a.status !== "active") return false;
+  const kind = setupKindFor(a.type ?? null);
+  if (kind === "guided") return a.setup.kind === "not_finished";
+  if (kind === "message") return !messageReady(a.calls) && a.setup.kind === "not_finished";
+  return false;
+}

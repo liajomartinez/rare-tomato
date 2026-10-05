@@ -28,6 +28,8 @@ export function thresholdsFromEnv(env: Record<string, string | undefined> = proc
 }
 
 export const MIN_SCORED_VERDICTS = 5;
+/** The design's rule (owner decision 4, 2026-10-04): a number is shown only once an agent has reported at least this many tasks (and enough of them could be checked). */
+export const MIN_REPORTED_TASKS = 5;
 export const SCORE_WINDOW_DAYS = 14;
 export const MAX_CANDIDATE_RULES = 5;
 

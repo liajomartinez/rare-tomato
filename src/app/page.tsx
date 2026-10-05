@@ -2,20 +2,18 @@ import Link from "next/link";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { agentsFor, rulesFor, scoringFor, tasksFor } from "@/db/production";
+import { attentionOf } from "@/lib/attention";
 import { FLOW_AGENTS, LATER_COOKIE, parsePicked, PICKED_COOKIE } from "@/lib/onboarding-flow";
+import { shortDate, TYPE_LABEL } from "@/lib/platforms";
 import { currentSession } from "@/lib/session";
-import { agentsNeedingStep } from "@/lib/onboarding";
-import { agentsNeedStep, S } from "@/lib/strings";
+import { attentionBody, attentionTitle, NO_CALLS_YET, S } from "@/lib/strings";
 import { whoCanSeeRule } from "@/lib/agents-view";
 import { InstallCard } from "./InstallCard";
 import { ScoreCard } from "./ScoreCard";
 import { AgentAvatar, Banner, Nav, SignedInAs, Sticker, WhoCanSee } from "./ui";
-import { shortDate } from "./agents/Setup";
 import { Landing } from "./start/Landing";
 
 export const dynamic = "force-dynamic";
-
-const TYPE_LABEL: Record<string, string> = { claude: "Claude", chatgpt: "ChatGPT", muse: "Muse", grok: "Grok Bot", other: "Another agent" };
 
 export default async function Home() {
   const session = await currentSession();
@@ -36,13 +34,12 @@ export default async function Home() {
   }
 
   const scoring = scoringFor(session.person.id);
-  const [agents, toReview, newest, anyTask, summary, freshness, modelOn, rules] = await Promise.all([
+  const [agents, toReview, newest, anyTask, summary, modelOn, rules] = await Promise.all([
     agentsFor(session.person.id).list(),
     tasksFor(session.person.id).reviewCount(),
     tasksFor(session.person.id).feed({ notReviewed: true, limit: 1 }),
     tasksFor(session.person.id).feed({ limit: 1 }),
     scoring.summary(),
-    scoring.freshness(),
     scoring.modelCallsOn(),
     rulesFor(session.person.id).list(),
   ]);
@@ -53,7 +50,7 @@ export default async function Home() {
   const active = agents.filter((a) => a.status === "active");
   const waiting = agents.filter((a) => a.status === "unassigned").length;
   const hasTasks = anyTask.length > 0;
-  const live = rules.filter((r) => r.status === "active" || r.status === "locked");
+  const live = rules.filter((r) => r.status === "active");
   // A brand-new account goes straight into the first-login flow (SPEC part A). "Do this later" lands on Home instead.
   if (active.length === 0 && waiting === 0 && !hasTasks && live.length === 0 && picked.length === 0 && !later) redirect("/start/agents");
 
@@ -62,37 +59,25 @@ export default async function Home() {
   const target = notConnected[0] ?? FLOW_AGENTS[0];
   const readers = whoCanSeeRule(agents, "all");
   const installEligible = active.length > 0 || live.length > 0;
-  const needStep = agentsNeedingStep(agents);
+  const attention = attentionOf(agents);
 
-  const waitingBanner =
-    waiting > 0 ? (
-      <Banner
-        tone="info"
-        title={S.home.waitTitle(waiting)}
-        action={
-          <Link href="/agents" prefetch={false} className="btn btn-quiet btn-sm pull-left">
-            {S.agents.check}
-          </Link>
-        }
-      >
-        {S.home.waitBody(waiting)}
-      </Banner>
-    ) : null;
-  const stepBanner =
-    needStep > 0 ? (
+  // "2 things need your attention": agents to confirm, setup to finish, connections that timed out. One secondary button, because Home has its own primary.
+  const attentionBanner =
+    attention.count > 0 ? (
       <Banner
         tone="headsup"
+        title={attentionTitle(attention.count)}
         action={
-          <Link href="/agents" prefetch={false} className="btn btn-quiet btn-sm pull-left">
-            {S.nav.agents}
+          <Link href="/agents" prefetch={false} className="btn btn-sm">
+            {S.home.reviewSetup}
           </Link>
         }
       >
-        {agentsNeedStep(needStep)}.
+        {attentionBody(attention.confirm.length, attention.finish.length, attention.timedOut.length)}
       </Banner>
     ) : null;
 
-  // ---- First visit, and after "Do this later" (SPEC A9): one next step, quiet sections, no score or review yet ----
+  // ---- First visit, and after "Do this later" (SPEC A8): one next step, quiet sections, no score or review yet ----
   if (active.length === 0 || !hasTasks) {
     const none = active.length === 0;
     const N = S.onb.dash.none;
@@ -106,7 +91,7 @@ export default async function Home() {
       <section className="card card-ink card-roomy" aria-label={S.onb.dash.nextEyebrow}>
         <p className="eyebrow">{S.onb.dash.nextEyebrow}</p>
         <h2>{none ? N.title(target.name) : S.onb.dash.nextTitle}</h2>
-        <p>{none ? N.body : "Agents can read these rules when they ask."}</p>
+        <p>{none ? N.body : S.onb.dash.nextBody}</p>
         {none ? (
           <Link href={`/start/setup?agent=${target.key}`} prefetch={false} className="btn btn-primary btn-block">
             {N.button(target.name)}
@@ -145,9 +130,7 @@ export default async function Home() {
                   <b style={{ font: "var(--font-name-md)" }}>
                     {a.name} <span className="caption">{"·"} {a.type ? TYPE_LABEL[a.type] : "agent"}</span>
                   </b>
-                  <span className="caption">
-                    {a.setup.kind === "working" ? S.agents.statusWorking(shortDate(a.setup.at)) : `${S.agents.statusNot}. ${S.agents.statusNotHelp}`}
-                  </span>
+                  <span className="caption">{a.setup.kind === "working" ? `${S.agents.working}. ${S.agents.lastChecked(shortDate(a.setup.at))}` : NO_CALLS_YET}</span>
                 </div>
               </div>
             ))}
@@ -157,9 +140,7 @@ export default async function Home() {
       <div className="stack stack-5">
         {next}
         {agentsList}
-        {!none
-          ? sec(S.onb.dash.reviewHeading, <p className="caption">{S.onb.dash.reviewEmpty(active[0].name)}</p>)
-          : null}
+        {!none ? sec(S.onb.dash.reviewHeading, <p className="caption">{S.onb.dash.reviewEmpty(active[0].name)}</p>) : null}
         {!none
           ? sec(
               S.onb.dash.scoreHeading,
@@ -167,8 +148,10 @@ export default async function Home() {
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img src="/brand/tomato-0-still-learning.png" alt="" aria-hidden="true" width={56} height={56} />
                 <div className="stack stack-1">
-                  <b style={{ font: "var(--font-name-md)" }}>{S.onb.dash.scoreLearning}</b>
-                  <span className="caption">{S.onb.dash.scoreNote}</span>
+                  <b style={{ font: "var(--font-name-md)" }}>{S.score.learning}</b>
+                  <span className="caption">
+                    {S.score.need(0)} {S.agentReported}.
+                  </span>
                 </div>
               </div>,
             )
@@ -193,8 +176,7 @@ export default async function Home() {
         <Nav current="home" />
         <main className="page">
           <h1>{S.onb.dash.title}</h1>
-          {waitingBanner}
-          {stepBanner}
+          {attentionBanner}
           <div className="cols">
             {main}
             {rail}
@@ -206,7 +188,7 @@ export default async function Home() {
     );
   }
 
-  // ---- The everyday Home (SPEC B6) ----
+  // ---- The everyday Home (SPEC B5) ----
   const first = newest[0];
   const review =
     toReview > 0 && first ? (
@@ -224,7 +206,6 @@ export default async function Home() {
           {S.home.review}
         </Link>
         <div className="row row-between">
-          <span className="caption">{S.home.reviewPace}</span>
           <Link href="/feed?unreviewed=1" prefetch={false} className="btn btn-quiet pull-right">
             {S.home.reviewAll(toReview)}
           </Link>
@@ -233,26 +214,39 @@ export default async function Home() {
     ) : (
       <section className="card card-roomy" aria-label="Things to review">
         <h2>Nothing to review right now</h2>
-        <p className="caption">{S.home.nothing}</p>
+        <p className="caption">{S.feed.pace}</p>
       </section>
     );
+
+  // One rule-following card per agent that reported tasks, the one with the most reported tasks first.
+  const nameOf = new Map(agents.map((a) => [a.id, a.name]));
+  const scoreCards = summary.byAgent
+    .filter((x) => nameOf.has(x.connectionId))
+    .map((x, i) => (
+      <ScoreCard
+        key={x.connectionId}
+        agentName={nameOf.get(x.connectionId) as string}
+        percent={x.score.percent}
+        reportedTasks={x.reportedTasks}
+        paused={!modelOn && i === 0}
+        needsAnswer={i === 0 ? summary.needsAnswer : 0}
+      />
+    ));
 
   return (
     <>
       <Nav current="home" />
       <main className="page">
-        <h1 className="home-title">{S.home.hello}</h1>
-        {waitingBanner}
-        {stepBanner}
+        <h1 className="home-title">{S.home.welcome}</h1>
+        {attentionBanner}
         <div className="cols cols-home">
-          <ScoreCard
-            percent={summary.score.percent}
-            scored={summary.score.scored}
-            tasksLogged={summary.tasksLogged14d}
-            freshnessPercent={freshness}
-            paused={!modelOn}
-            needsAnswer={summary.needsAnswer}
-          />
+          <div className="stack">
+            {scoreCards.length > 0 ? (
+              scoreCards
+            ) : (
+              <ScoreCard agentName={active[0].name} percent={null} reportedTasks={0} paused={!modelOn} needsAnswer={summary.needsAnswer} />
+            )}
+          </div>
           <div className="stack stack-5">
             {review}
             <InstallCard eligible={installEligible} />

@@ -21,9 +21,9 @@ export async function confirmAgent(formData: FormData) {
     extraScopes: formData.getAll("extra").map(String),
     replaceId: text(formData, "replaceId"),
   });
-  // Onboarding (src/app/start) asks to come back to its own next screen. Only an address inside /start/ is followed.
+  // Onboarding (src/app/start) asks to come back to its own next screen. Only an address inside /start/ or /agents is followed.
   const next = text(formData, "next");
-  if (result.ok && /^\/start\/[a-z]+(\?[\w=&-]*)?$/.test(next)) {
+  if (result.ok && /^\/(start|agents)(\/[a-z]+)?(\?[\w=&-]*)?$/.test(next)) {
     revalidatePath("/agents");
     redirect(next);
   }
@@ -46,6 +46,15 @@ export async function revokeAgent(formData: FormData) {
   const person = await requireReady();
   const result = await agentsFor(person.id).revoke(text(formData, "id"));
   done(result.ok ? "Agent disconnected. It stops working from its next request." : result.message);
+}
+
+/** "Reconnect" on an agent that timed out: the old, never-confirmed connection is removed, and the person starts the connection again from the pick screen. */
+export async function reconnectAgent(formData: FormData) {
+  const person = await requireReady();
+  const result = await agentsFor(person.id).remove(text(formData, "id"));
+  if (!result.ok) done(result.message);
+  revalidatePath("/agents");
+  redirect("/start/agents");
 }
 
 export async function removeAgent(formData: FormData) {

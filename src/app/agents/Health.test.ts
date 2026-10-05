@@ -7,7 +7,7 @@ import { Health } from "./Health";
 const agent: AgentView = {
   id: "a1", name: "Marge", type: "muse", suggestedType: null, scopes: [], status: "active",
   lastSeenAt: new Date("2026-10-01T10:00:00Z"), expiresAt: null, usesBearer: false,
-  lastRulesFetchedAt: new Date("2026-10-01T09:30:00Z"), lastTaskAt: new Date("2026-10-01T09:45:00Z"), notSeenRecently: false, setup: { kind: "not_finished" },
+  lastRulesFetchedAt: new Date("2026-10-01T09:30:00Z"), lastTaskAt: new Date("2026-10-01T09:45:00Z"), notSeenRecently: false, setup: { kind: "not_finished" }, calls: { rules: null, details: null, task: null },
 };
 const render = (over: Partial<AgentView> = {}) => renderToStaticMarkup(createElement(Health, { agent: { ...agent, ...over } }));
 
