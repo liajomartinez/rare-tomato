@@ -48,13 +48,13 @@ export default function Privacy() {
             <td style={td}>In our database. {NOT_FIELD_ENCRYPTED}</td>
           </tr>
           <tr>
-            <td style={td}>Your details (preferences, contacts, family details)</td>
+            <td style={td}>The details you save (preferences, contacts, family details)</td>
             <td style={td}>
               The detail itself is encrypted at the field level. Its short label, its category, any Sensitive label and the list of agents you chose for it are not.
             </td>
           </tr>
           <tr>
-            <td style={td}>Your agents: the name you gave each, what kind it is, what it may read, when it last connected</td>
+            <td style={td}>Connected agents: the name you gave each, what kind it is, what it may read, when it last connected</td>
             <td style={td}>{NOT_FIELD_ENCRYPTED}</td>
           </tr>
           <tr>
@@ -110,7 +110,7 @@ export default function Privacy() {
       </table>
 </div>
       <p>
-        Labels, categories, rules, rule history and feedback reasons are not encrypted at the field level and can still reveal personal information. Your details, task
+        Labels, categories, rules, rule history and feedback reasons are not encrypted at the field level and can still reveal personal information. The details you save, task
         summaries and details, and notes are encrypted at the field level. Our servers can decrypt them to run the service and to give them to agents you allow.{" "}
         {NOT_END_TO_END} No security measure removes every risk.
       </p>
@@ -186,7 +186,7 @@ export default function Privacy() {
       <ul>
         <li>Review an agent&apos;s provider before you connect it. When you connect an agent, it can read the details and rules you allow and can tell us what it did.</li>
         <li>
-          Changing or removing an agent on Your agents stops its future access through Rare Tomato immediately. It cannot recall what the agent already received. {AGENT_MEMORY_NOTE}{" "}
+          Changing or removing an agent on Connected Agents stops its future access through Rare Tomato immediately. It cannot recall what the agent already received. {AGENT_MEMORY_NOTE}{" "}
           Independent providers may keep copies in their own memory under their own terms.
         </li>
         <li>
@@ -201,7 +201,7 @@ export default function Privacy() {
         <li>Download everything we hold about you as one file, on Settings and data.</li>
         <li>See which agent asked for which kinds of information and when, on Settings and data.</li>
         <li>Delete your account and everything in it, on Settings and data.</li>
-        <li>Change what each agent can read, or remove it, on Your agents.</li>
+        <li>Change what each agent can read, or remove it, on Connected Agents.</li>
         <li>You can also email support@raretomato.ai, including if information about you was added by someone else and you have no account.</li>
       </ul>
       <p>

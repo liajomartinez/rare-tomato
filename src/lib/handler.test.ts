@@ -136,7 +136,7 @@ const returnedCategories = (body: { result: { content: { text: string }[] } }) =
   (JSON.parse(body.result.content[0].text).facts as { category: string }[]).map((f) => f.category).sort();
 
 const ALL_TOOLS = ["get_care_profile", "get_rules", "hello", "log_task", "propose_correction"];
-const CONFIRM_MESSAGE = "Confirm this agent in Rare Tomato (open Your agents), then try again.";
+const CONFIRM_MESSAGE = "Confirm this agent in Rare Tomato (open Connected Agents), then try again.";
 const DATA_TOOL_CALLS: [string, unknown][] = [
   ["get_care_profile", { categories: ["preferences", "contacts", "family"] }],
   ["get_rules", {}],
@@ -767,7 +767,7 @@ describe("Release 1: reject-reason log for the connection check (the project not
       status: 403,
       www: null,
       type: "application/json",
-      body: '{"error":"cap_reached","message":"You have reached the limit of 5 connected agents. Remove one on Your agents in Rare Tomato, then try again."}',
+      body: '{"error":"cap_reached","message":"You have reached the limit of 5 connected agents. Remove one on Connected Agents in Rare Tomato, then try again."}',
     });
     expect(rejectLines()).toEqual(['{"reason":"connection_cap_reached"}']);
     expect((await p.t.agentConnections.list()).length).toBe(5);

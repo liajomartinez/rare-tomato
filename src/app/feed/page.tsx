@@ -143,7 +143,7 @@ export default async function Feed({
               <section className="card">
                 <h2>{onlyUnreviewed && toReview === 0 ? "Nothing to review right now" : "Nothing here yet"}</h2>
                 <p>
-                  When one of your agents finishes a task, it can record it here. To connect one, go to <a href="/agents">Your agents</a>. After you confirm an agent,
+                  When one of your agents finishes a task, it can record it here. To connect one, go to <a href="/agents">Connected Agents</a>. After you confirm an agent,
                   start a new chat in it and ask it to help with something.
                 </p>
               </section>

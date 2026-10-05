@@ -66,8 +66,8 @@ export interface ToolDef {
   register(server: McpServer, ctx: ToolContext): void;
 }
 
-export const NOT_CONFIRMED_MESSAGE = "Confirm this agent in Rare Tomato (open Your agents), then try again.";
-export const NOT_ALLOWED_MESSAGE = "This agent is not allowed to do that. The person can change its access in Rare Tomato (open Your agents).";
+export const NOT_CONFIRMED_MESSAGE = "Confirm this agent in Rare Tomato (open Connected Agents), then try again.";
+export const NOT_ALLOWED_MESSAGE = "This agent is not allowed to do that. The person can change its access in Rare Tomato (open Connected Agents).";
 
 const CATEGORY_SCOPE: Record<Category, string> = {
   preferences: "profile:basic",

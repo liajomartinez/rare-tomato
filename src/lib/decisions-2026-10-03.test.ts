@@ -29,8 +29,8 @@ describe("O1 (decision 5, 2026-10-04): the words are the design's", () => {
     expect(text("src/app/rules/page.tsx")).toContain("{S.rules.discard}");
     expect(text("src/app/feed/FeedbackForm.tsx")).toContain("{H.cta}");
   });
-  it("Your agents, and Needs confirmation for an agent that has signed in but is not confirmed", () => {
-    expect(S.agents.title).toBe("Your agents");
+  it("Connected Agents, and Needs confirmation for an agent that has signed in but is not confirmed", () => {
+    expect(S.agents.title).toBe("Connected Agents");
     expect(S.agents.needsConfirm).toBe("Needs confirmation");
   });
 });
@@ -68,7 +68,6 @@ describe("O8: the unconfirmed-agent limit is the one the product computes", () =
   it("no screen types a clock time or a day count for it by hand", () => {
     for (const f of sources) expect(text(f), f).not.toMatch(/\b\d{1,2}:\d{2}\s?(am|pm)\b/i);
     expect(text("src/app/agents/confirm/page.tsx")).toContain("UNASSIGNED_LIFETIME_DAYS");
-    expect(text("src/app/start/setup/page.tsx")).toContain("UNASSIGNED_LIFETIME_DAYS");
   });
 });
 

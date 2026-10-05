@@ -42,7 +42,7 @@ export const BLOCKED_CHECK_NOTE =
 export const AGENT_MEMORY_NOTE = "Deleting here does not delete a copy an agent has kept in its own memory.";
 
 export const NOT_END_TO_END =
-  "Your details are stored encrypted, but our servers can decrypt them in order to pass them to your agents. This is not end-to-end encryption.";
+  "The details you save are stored encrypted, but our servers can decrypt them in order to pass them to your agents. This is not end-to-end encryption.";
 
 export const SCORE_PAUSED = "Scoring is paused for now. Your feedback is still saved.";
 
@@ -143,9 +143,9 @@ export const MUSE_MESSAGE = `Connect this MCP server for me: ${MCP_URL}. ${AGENT
 export const S = {
   product: 'Rare Tomato',
   agentReported: 'Agent-reported',
-  nav: { home: 'Home', feed: 'What your agents did', rules: 'Your rules', details: 'Your details', agents: 'Your agents', settings: 'Settings and data', signOut: 'Sign out', menu: 'Menu', close: 'Close', more: 'More' },
+  nav: { home: 'Home', feed: 'Agent Activity', rules: 'Your Rules', agents: 'Connected Agents', settings: 'Settings and data', signOut: 'Sign out', menu: 'Menu', close: 'Close', more: 'More' },
   feed: {
-    title: 'What your agents did',
+    title: 'Agent Activity',
     intro: 'Recent tasks your agents reported to Rare Tomato.',
     about: 'About this list',
     aboutNote: 'Rare Tomato only shows tasks an agent reports. Unreported activity is not visible here.',
@@ -170,14 +170,16 @@ export const S = {
     close: 'Close'
   },
   rules: {
-    title: 'Your rules',
+    title: 'Your Rules and Info',
+    subtext: 'This is the information your agents check before they work for you.',
+    partRules: 'Rules', partInfo: 'Info',
     short: 'Rules are advisory. An agent has to ask for them and can choose not to. What an agent reports about its own work is agent-reported.',
     eyebrow: 'Proposed rule', notSaved: 'Not saved yet',
     source: (agent: string) => 'Created from your feedback on ' + agent + "'s task.",
     seeSource: 'See original task and feedback',
     scope: 'Who can use this rule?',
     save: 'Save rule', discard: 'Discard',
-    liveHeading: (n: number) => 'Your rules \u00B7 ' + n,
+    liveHeading: (n: number) => 'Your Rules \u00B7 ' + n,
     added: (d: string) => 'Added ' + d,
     editShort: 'Edit', del: 'Delete',
     whoTitle: 'Who can read your rules',
@@ -189,9 +191,9 @@ export const S = {
     availableTo: 'Available to'
   },
   agents: {
-    title: 'Your agents',
+    title: 'Connected Agents',
     intro: 'Dates come from our own record. They do not mean an agent followed a rule.',
-    attention: 'Needs attention', connected: 'Connected', disconnected: 'Disconnected',
+    attention: 'Needs attention', connected: 'Connected', removed: 'Removed', expired: 'Expired',
     needsConfirm: 'Needs confirmation', confirm: (n: string) => 'Confirm ' + n,
     finishSetup: 'Finish setup',
     museBody: "Muse is connected, but it hasn't checked Rare Tomato yet.",
@@ -199,7 +201,7 @@ export const S = {
     working: 'Working', lastChecked: (d: string) => 'Last checked your rules ' + d + '.',
     setupNot: 'Setup not finished', claudeBody: 'Add one instruction so Claude knows when to check Rare Tomato.',
     experimental: 'Experimental',
-    oldLabel: 'Old Marge \u00B7 Disconnected', remove: 'Remove',
+    remove: 'Remove',
     removeNote: "Removing an agent won't remove copies it already saved.",
     connect: 'Connect an agent',
     seeTitle: 'What we can and cannot see',
@@ -212,7 +214,7 @@ export const S = {
     // focused finish-setup screens
     finishTitle: (n: string) => 'Finish setting up ' + n,
     museStep: 'Paste this into a Muse chat.',
-    museNote: 'Muse may lose its Rare Tomato connection after an hour or two. You can reconnect the same way if that happens.',
+    museNote: 'Our connection to Muse is experimental. It may need reconnecting after an hour or two.',
     prompt: 'Check my Rare Tomato rules now and use any that apply.',
     copyPrompt: 'Copy prompt', openMuse: 'Open Muse', back: 'Back'
   },
@@ -228,7 +230,8 @@ export const S = {
     installTitle: 'Add Rare Tomato to your home screen',
     installBody: 'It opens in its own window, like an app. Nothing else changes.',
     installShow: 'Show me how', installLater: 'Not now',
-    whoTitle: 'Who can read your rules'
+    whoTitle: 'Who can read your rules',
+    ask: (agent: string) => 'Ask ' + agent + ' to help with something.'
   },
   score: {
     title: (n: string) => n + "'s rule following",
@@ -249,7 +252,7 @@ export const S = {
       example: 'Example rule',
       exampleRule: 'Ask before sharing my phone number or address.',
       chips: ['Claude', 'ChatGPT', 'Grok Bot', 'Muse'],
-      points: [['Set your preferences once', 'Add the rules and preferences you want your agents to know.'], ['Review what your agents did', 'See the tasks they report and how they scored themselves.'], ['Correct them in a few taps', 'Give feedback and turn mistakes into new rules for next time.']],
+      points: [['Set your preferences once', 'Add the rules and preferences you want your agents to know.'], ['Review Agent Activity', 'See the tasks they report and how they scored themselves.'], ['Correct them in a few taps', 'Give feedback and turn mistakes into new rules for next time.']],
       limitsLead: 'Rare Tomato does not control your agents.',
       limits: ' Agents choose when to read and follow your rules. Task history and adherence scores are based on what each agent reports.',
       privacy: 'Privacy', terms: 'Terms'
@@ -316,14 +319,13 @@ export const S = {
         body: 'Paste this into a new Muse chat. Muse will set up Rare Tomato and ask you to sign in.',
         msg: MUSE_MESSAGE,
         copy: 'Copy setup message', open: 'Open Muse',
-        notice: 'Muse may lose its Rare Tomato connection after an hour or two. You can reconnect the same way if that happens.',
+        notice: 'Our connection to Muse is experimental. It may need reconnecting after an hour or two. If that happens, reconnect the same way.',
         ready: 'Muse is connected', readyBody: 'It may need reconnecting after an hour or two.'
-      },
-      stopped: { title: 'Muse connection timed out', body: 'Muse may lose its Rare Tomato connection after an hour or two. You can reconnect the same way if that happens.', button: 'Reconnect' }
+      }
     },
     dash: {
       title: 'Home',
-      connectedHeading: 'Your agents', waitingTask: 'Connected. Waiting for its first task.',
+      connectedHeading: 'Connected Agents', waitingTask: 'Connected. Waiting for its first task.',
       nextEyebrow: 'Next step', nextTitle: 'Write your first rule', nextBody: 'Agents can read these rules when they ask.', nextButton: 'Write a rule',
       reviewHeading: 'To review', reviewEmpty: (a: string) => 'Nothing yet. When ' + a + ' reports a task, it shows up here.',
       scoreHeading: 'Rule following',
@@ -333,22 +335,7 @@ export const S = {
   }
 };
 
-// Where each "Open ___" button goes. url null = no link given yet. None of these has been opened or tested by us (status: unchecked).
-export const LINKS = {
-  openClaudeConnectors: { url: 'https://claude.ai/settings/connectors?modal=add-custom-connector', source: 'feedback v4', status: 'unchecked' },
-  openChatGPTAppSettings: { url: 'https://chatgpt.com/#settings/Connectors', source: 'feedback v4 (not a documented OpenAI route)', status: 'unchecked' },
-  openClaudeInstructions: { url: null, source: 'no link given', status: 'unchecked' },
-  openCustomInstructions: { url: null, source: 'no link given', status: 'unchecked' },
-  open_grok_bot: { url: null, source: 'new Grok Bot chat; no link given', status: 'unchecked' },
-  open_grok_bot_connectors: { url: 'https://grok.com/connectors', source: 'feedback v4', status: 'unchecked' },
-  openMuse: { url: null, source: 'new Muse chat; no link given', status: 'unchecked' },
-  openClaudeAfterSetup: { url: null, source: 'no link given', status: 'unchecked' },
-  openChatGPTAfterSetup: { url: null, source: 'no link given', status: 'unchecked' }
-};
-
-/** The link behind an "Open ___" button, or null when the design gave none. A button with no link is not shown (nothing is guessed). */
-export type LinkKey = keyof typeof LINKS;
-export const linkFor = (key: LinkKey): string | null => LINKS[key].url;
+// Where each "Open ___" button goes: see src/lib/agent-links.ts.
 
 // ---- Sentences the handoff leaves as one fixed sample but the product says for any number or any agent (NEW, built from the handoff's words) ----
 
@@ -371,6 +358,8 @@ export function attentionBody(confirm: number, finish: number, timedOut: number)
 export const finishBody = (platform: string, name: string) =>
   platform === 'Claude' ? S.agents.claudeBody : 'Add one instruction so ' + name + ' knows when to check Rare Tomato.';
 export const messageBody = (name: string) => (name === 'Muse' ? S.agents.museBody : name + " is connected, but it hasn't checked Rare Tomato yet.");
+/** Muse's wording for an expired connection (Lia, round 9). */
+export const MUSE_EXPIRED_BODY = 'Our connection to Muse is experimental. It may need reconnecting after an hour or two. You can reconnect the same way.';
 export const TIMED_OUT_BODY = 'It signed in, but was not confirmed in time, so it was turned off.';
 export const reconnectNote = (name: string) => name + ' signed in again? Choose "This replaces my old ' + name + '" when you confirm it.';
 export const NO_CALLS_YET = 'Connected. Waiting for its first task.';

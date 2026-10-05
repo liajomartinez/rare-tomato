@@ -2,8 +2,8 @@ import { agentsFor, profileFor } from "@/db/production";
 import { whoCanSee, whoCanSeeFact } from "@/lib/agents-view";
 import { CATEGORIES, type Category } from "@/lib/profile";
 import { requireReady } from "@/lib/session";
-import { AGENT_MEMORY_NOTE, NOT_END_TO_END, VISIBILITY_ALL, VISIBILITY_CHOSEN, VISIBILITY_NOTE } from "@/lib/strings";
-import { button, card, muted, Nav, Notice, page } from "../ui";
+import { AGENT_MEMORY_NOTE, NOT_END_TO_END, S, VISIBILITY_ALL, VISIBILITY_CHOSEN, VISIBILITY_NOTE } from "@/lib/strings";
+import { button, card, muted, Nav, Notice, page, RulesInfoSwitch } from "../ui";
 import { deleteFact, reviewFact, setFactVisibility } from "./actions";
 import { FactForm } from "./FactForm";
 
@@ -21,8 +21,10 @@ export default async function Profile({ searchParams }: { searchParams: Promise<
 
   return (
     <main style={page}>
-      <Nav />
-      <h1>Your details</h1>
+      <Nav current="rules" />
+      <h1>{S.rules.title}</h1>
+      <p className="caption">{S.rules.subtext}</p>
+      <RulesInfoSwitch current="info" />
       {message ? <Notice>{message}</Notice> : null}
       <p>
         These stay in your account. Only the agents you have confirmed, and only the kinds of detail you allow them, can read them. {NOT_END_TO_END}

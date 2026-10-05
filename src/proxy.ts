@@ -12,4 +12,4 @@ export default function proxy(request: NextRequest, event: NextFetchEvent) {
   return configured() ? signIn(request, event) : NextResponse.next();
 }
 
-export const config = { matcher: ["/", "/welcome", "/profile", "/agents", "/agents/confirm", "/agents/finish", "/agents/status", "/feed", "/rules", "/care-sheet", "/start/account", "/start/agents", "/start/setup", "/data", "/data/export", "/data/audit", "/privacy", "/terms", "/callback", "/sign-in", "/sign-out"] };
+export const config = { matcher: ["/", "/welcome", "/profile", "/agents", "/agents/confirm", "/agents/finish", "/agents/view", "/agents/status", "/feed", "/rules", "/care-sheet", "/start/account", "/start/roadmap", "/start/agents", "/start/setup", "/data", "/data/export", "/data/audit", "/privacy", "/terms", "/callback", "/sign-in", "/sign-out"] };

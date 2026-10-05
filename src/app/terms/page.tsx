@@ -31,7 +31,7 @@ export default function Terms() {
       <h2>3. Accounts and agent connections</h2>
       <p>
         Keep your access secure and review permissions before you connect an agent. Tell support@raretomato.ai if you suspect unauthorized access. You can change or remove
-        agents on Your agents. Disconnecting an agent stops its future access through Rare Tomato but cannot recall information it already received. Other providers&apos; terms
+        agents on Connected Agents. Disconnecting an agent stops its future access through Rare Tomato but cannot recall information it already received. Other providers&apos; terms
         govern their own services.
       </p>
 

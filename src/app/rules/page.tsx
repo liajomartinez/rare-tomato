@@ -2,7 +2,7 @@ import { agentsFor, feedbackFor, rulesFor, tasksFor } from "@/db/production";
 import { whoCanSeeRule } from "@/lib/agents-view";
 import { STRENGTHS, type RuleRecord } from "@/lib/rules";
 import { requireReady } from "@/lib/session";
-import { Banner, Nav, Notice, SignedInAs, Sticker, Tag, WhoCanSee } from "../ui";
+import { Banner, Nav, Notice, RulesInfoSwitch, SignedInAs, Sticker, Tag, WhoCanSee } from "../ui";
 import { ConflictPanel, hasContradiction, overlapsFor } from "./ConflictPanel";
 import { AGENT_MEMORY_NOTE, DRAFT_GONE, EDIT_THEN_APPROVE, OLD_PROPOSALS_HEADING, OLD_PROPOSALS_NOTE, S } from "@/lib/strings";
 import { approveRule, deleteRule, discardDraft, editRule, resolveRule } from "./actions";
@@ -281,6 +281,8 @@ export default async function Rules({ searchParams }: { searchParams: Promise<{ 
       <main className="page">
         <div className="stack stack-2">
           <h1>{S.rules.title}</h1>
+          <p className="caption">{S.rules.subtext}</p>
+          <RulesInfoSwitch current="rules" />
           <p className="caption">{S.rules.short}</p>
         </div>
         <div className="cols">

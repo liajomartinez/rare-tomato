@@ -56,8 +56,9 @@ describe("decision 2: the instruction text, word for word, in one constant", () 
   });
 
   it("the Claude and ChatGPT screens, Finish setup and the Muse message all use the constant", () => {
-    expect(read("src/app/agents/SetupParts.tsx")).toContain("AGENT_INSTRUCTION");
-    for (const f of ["src/app/start/setup/page.tsx", "src/app/agents/finish/page.tsx"]) expect(read(f), f).toContain("InstructionBlock");
+    expect(read("src/lib/onboarding-copy.ts")).toContain("AGENT_INSTRUCTION");
+    expect(read("src/app/start/setup/page.tsx")).toContain("OpenCopyScreen"); // the instruction screens read COPY.<agent>.instr.text, which is the constant
+    expect(read("src/app/agents/finish/page.tsx")).toContain("/start/setup"); // Finish setup opens the same flow
     expect(S.onb.setup.muse.msg).toBe(MUSE_MESSAGE);
   });
 
@@ -152,23 +153,20 @@ describe("decision 9: nothing in the product talks about 'hello'", () => {
 });
 
 describe("decision 10: Muse is Experimental, with the reliability notice and a Reconnect button", () => {
-  const NOTICE = "Muse may lose its Rare Tomato connection after an hour or two. You can reconnect the same way if that happens.";
+  const NOTICE = "Our connection to Muse is experimental. It may need reconnecting after an hour or two. If that happens, reconnect the same way.";
 
   it("the notice is the handoff's wording and says an hour or two", () => {
     expect(S.onb.setup.muse.notice).toBe(NOTICE);
-    expect(S.agents.museNote).toBe(NOTICE);
-    expect(NOTICE).toContain("may lose its Rare Tomato connection after an hour or two");
+    expect(S.agents.museNote).toBe("Our connection to Muse is experimental. It may need reconnecting after an hour or two.");
+    expect(NOTICE).toContain("may need reconnecting after an hour or two");
   });
 
   it("is on the setup message, the ready screen, Finish setup and the connected card, each with Experimental and a Reconnect", () => {
     const setup = read("src/app/start/setup/page.tsx");
-    expect(setup).toContain("U.muse.notice");
-    expect(setup).toContain("S.onb.pick.experimental");
-    expect(setup).toContain("S.agents.reconnect");
+    expect(setup).toContain("MUSE_NOTICE");
+    expect(setup).toContain("COPY.muse.message?.tag");
+    expect(read("src/lib/onboarding-copy.ts")).toContain("Experimental");
     expect(S.onb.pick.experimental).toBe("Experimental");
-    const finish = read("src/app/agents/finish/page.tsx");
-    expect(finish).toContain("S.agents.museNote");
-    expect(finish).toContain("S.agents.experimental");
     const agents = read("src/app/agents/page.tsx");
     expect(agents).toContain("S.agents.museNote");
     expect(agents).toContain("S.agents.reconnect");

@@ -1,76 +1,19 @@
 import Link from "next/link";
 import { agentsFor } from "@/db/production";
-import type { AgentView } from "@/lib/agents-view";
 import { attentionOf } from "@/lib/attention";
 import { needsFinishSetup } from "@/lib/onboarding";
 import { isGuided, shortDate, TYPE_LABEL } from "@/lib/platforms";
 import { requireReady } from "@/lib/session";
-import { finishBody, messageBody, NO_CALLS_YET, S, TIMED_OUT_BODY } from "@/lib/strings";
+import { finishBody, messageBody, NO_CALLS_YET, S } from "@/lib/strings";
 import { AgentAvatar, Nav, Notice, SignedInAs, StatusIcon, Tag, WhoCanSee } from "../ui";
-import { Health } from "./Health";
-import { changeAccess, reconnectAgent, removeAgent, renameAgent, revokeAgent } from "./actions";
+import { ExpiredCard } from "./ExpiredCard";
+import { ChangeSettings } from "./ChangeSettings";
 
 export const dynamic = "force-dynamic";
 
 // Your agents (SPEC B4), grouped by what the person has to do: Needs attention (waiting for a confirmation, setup not finished, connection timed out),
-// Connected, Disconnected (compact rows). The first Needs-attention card holds the one primary button. Empty sections are hidden. No tutorials inside
+// Connected. An agent that was removed or turned off on purpose is simply not listed. The first Needs-attention card holds the one primary button. Empty sections are hidden. No tutorials inside
 // cards: Confirm and Finish setup each open a focused screen. Every date comes from OUR OWN records and never means an agent followed a rule.
-
-const SCOPE_LABEL: Record<string, string> = {
-  "profile:basic": "Your preferences",
-  "profile:contacts": "Your contacts",
-  "profile:family": "Your family details",
-  "rules:read": "Your rules",
-  "tasks:write": "Record what it does",
-};
-const ALL_SCOPES = Object.keys(SCOPE_LABEL);
-
-function ChangeSettings({ a }: { a: AgentView }) {
-  return (
-    <details>
-      <summary>Name, access and disconnect</summary>
-      <div className="stack stack-3">
-        <Health agent={a} />
-        <form action={renameAgent} className="stack stack-3">
-          <input type="hidden" name="id" value={a.id} />
-          <div className="field">
-            <label htmlFor={`rename-${a.id}`}>Name</label>
-            <input id={`rename-${a.id}`} name="name" defaultValue={a.name} required maxLength={60} />
-          </div>
-          <div>
-            <button type="submit" className="btn-sm">
-              Save name
-            </button>
-          </div>
-        </form>
-        <form action={changeAccess} className="stack stack-3">
-          <input type="hidden" name="id" value={a.id} />
-          <fieldset>
-            <legend>What it may read or do</legend>
-            {ALL_SCOPES.map((s) => (
-              <div key={s}>
-                <label>
-                  <input type="checkbox" name="scope" value={s} defaultChecked={a.scopes.includes(s)} /> {SCOPE_LABEL[s]}
-                </label>
-              </div>
-            ))}
-          </fieldset>
-          <div>
-            <button type="submit" className="btn-sm">
-              Save access
-            </button>
-          </div>
-        </form>
-        <form action={revokeAgent}>
-          <input type="hidden" name="id" value={a.id} />
-          <button type="submit" className="btn-sm">
-            Disconnect this agent
-          </button>
-        </form>
-      </div>
-    </details>
-  );
-}
 
 /** One card in Needs attention: avatar, name, a status line with an icon, one sentence, one button. */
 function AttentionCard({
@@ -110,7 +53,6 @@ export default async function Agents({ searchParams }: { searchParams: Promise<{
   const agents = await agentsFor(person.id).list();
   const attention = attentionOf(agents);
   const active = agents.filter((a) => a.status === "active");
-  const revoked = agents.filter((a) => a.status === "revoked");
   const readers = active.filter((a) => a.scopes.includes("rules:read")).map((a) => a.name);
   const connected = active.filter((a) => !needsFinishSetup(a));
   // The first Needs-attention card holds the one primary button on the screen; with nothing to attend to, "Connect an agent" is the primary.
@@ -157,24 +99,7 @@ export default async function Agents({ searchParams }: { searchParams: Promise<{
     );
   }
   for (const a of attention.timedOut) {
-    const platform = a.suggestedType ? TYPE_LABEL[a.suggestedType] : null;
-    cards.push(
-      <AttentionCard
-        key={a.id}
-        name={platform ?? "An agent"}
-        status={S.agents.timedOut}
-        icon="alert"
-        body={TIMED_OUT_BODY}
-        button={
-          <form action={reconnectAgent}>
-            <input type="hidden" name="id" value={a.id} />
-            <button type="submit" className={btnClass(i++)}>
-              {S.agents.reconnect}
-            </button>
-          </form>
-        }
-      />,
-    );
+    cards.push(<ExpiredCard key={a.id} agent={a} primary={i++ === 0} />);
   }
 
   const sec = (heading: string, children: React.ReactNode) => (
@@ -200,7 +125,7 @@ export default async function Agents({ searchParams }: { searchParams: Promise<{
                     <div className="row row-nowrap">
                       <AgentAvatar name={a.name} />
                       <div className="stack stack-0 grow">
-                        <b style={{ font: "var(--font-name-lg)" }}>{a.name}</b>
+                        <Link href={`/agents/view?agent=${a.id}`} prefetch={false} className="strong-link" style={{ font: "var(--font-name-lg)" }}>{a.name}</Link>
                         <span className="caption">{platform}</span>
                       </div>
                       {muse ? <Tag strong>{S.agents.experimental}</Tag> : null}
@@ -219,7 +144,7 @@ export default async function Agents({ searchParams }: { searchParams: Promise<{
                     {muse ? (
                       <div className="stack stack-2">
                         <p className="caption">{S.agents.museNote}</p>
-                        <Link href="/start/setup?agent=muse&again=1" prefetch={false} className="btn btn-block">
+                        <Link href="/start/setup?agent=muse&step=form" prefetch={false} className="btn btn-block">
                           {S.agents.reconnect}
                         </Link>
                       </div>
@@ -228,31 +153,6 @@ export default async function Agents({ searchParams }: { searchParams: Promise<{
                   </article>
                 );
               })}
-            </div>,
-          )
-        : null}
-
-      {revoked.length > 0
-        ? sec(
-            S.agents.disconnected,
-            <div className="stack stack-2">
-              {revoked.map((a) => (
-                <div key={a.id} className="row row-between row-nowrap rule-row-compact">
-                  <div className="row row-nowrap">
-                    <AgentAvatar name={a.name} size="sm" />
-                    <span style={{ font: "var(--font-name)" }}>
-                      {a.name} {"·"} {S.agents.disconnected}
-                    </span>
-                  </div>
-                  <form action={removeAgent}>
-                    <input type="hidden" name="id" value={a.id} />
-                    <button type="submit" className="btn-quiet">
-                      {S.agents.remove}
-                    </button>
-                  </form>
-                </div>
-              ))}
-              <p className="caption">{S.agents.removeNote}</p>
             </div>,
           )
         : null}

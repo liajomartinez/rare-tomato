@@ -113,7 +113,7 @@ export async function handleMcp(request: Request, env: McpEnv): Promise<Response
       logReject(
         r.reason === "revoked" ? "connection_revoked" : r.reason === "account_setup_incomplete" ? "account_setup_incomplete" : r.reason === "cap_reached" ? "connection_cap_reached" : "not_confirmed_in_time",
       );
-      if (r.reason === "cap_reached") return json(403, "cap_reached", "You have reached the limit of 5 connected agents. Remove one on Your agents in Rare Tomato, then try again.");
+      if (r.reason === "cap_reached") return json(403, "cap_reached", "You have reached the limit of 5 connected agents. Remove one on Connected Agents in Rare Tomato, then try again.");
       if (r.reason === "revoked") return json(401, "unauthorized", "This agent was disconnected.", { "www-authenticate": 'Bearer error="invalid_token"' });
       if (r.reason === "account_setup_incomplete") return json(403, "forbidden", "Finish setting up your account on the Rare Tomato website first.");
       return json(403, "forbidden", "This agent was not confirmed in time. Remove it on the Agents screen and connect it again.");

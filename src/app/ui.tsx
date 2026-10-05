@@ -28,12 +28,11 @@ export const smallCaps: CSSProperties = {
   margin: "var(--space-4) 0 var(--space-2)",
 };
 
-export type NavKey = "home" | "feed" | "rules" | "details" | "agents";
+export type NavKey = "home" | "feed" | "rules" | "agents";
 const PRIMARY_LINKS: { key: NavKey; href: string; label: string }[] = [
   { key: "home", href: "/", label: S.nav.home },
   { key: "feed", href: "/feed", label: S.nav.feed },
   { key: "rules", href: "/rules", label: S.nav.rules },
-  { key: "details", href: "/profile", label: S.nav.details },
   { key: "agents", href: "/agents", label: S.nav.agents },
 ];
 
@@ -167,4 +166,18 @@ export function WhoCanSee({ title, agents, note }: { title: string; agents: stri
 export function AppIcon() {
   // eslint-disable-next-line @next/next/no-img-element
   return <img className="app-icon" src="/brand/app-icon.png" alt="" width={48} height={48} />;
+}
+
+/** Your Rules and Info is one place with two parts: the rules, and the saved details. The two links switch between them. */
+export function RulesInfoSwitch({ current }: { current: "rules" | "info" }) {
+  return (
+    <nav className="row row-tight" aria-label={S.rules.title}>
+      <Link href="/rules" prefetch={false} className="chip" aria-current={current === "rules" ? "true" : undefined}>
+        {S.rules.partRules}
+      </Link>
+      <Link href="/profile" prefetch={false} className="chip" aria-current={current === "info" ? "true" : undefined}>
+        {S.rules.partInfo}
+      </Link>
+    </nav>
+  );
 }
