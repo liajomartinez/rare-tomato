@@ -35,6 +35,9 @@
 --avatar-md:44px;
 --dot:10px;
 --bar-seg-h:6px;
+--bar-draft-w:160px;
+/* the static bar on the drafting sheet (SPEC 1c: 160 x 6 px, 45% ink) */
+--rt-bar-fill:rgba(35,26,46,0.45);
 
 /* type shorthands (every one is a role from typography.css, or a literal from the mockups) */
 --font-title:var(--fw-bold) var(--type-h2-size)/var(--type-h2-lh) var(--font-body);
