@@ -2,7 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
 import { SESSION_COOKIE_MAX_AGE_SECONDS } from "./session-config";
-import { THUMBS_DISCLOSURE } from "./strings";
+import { S } from "./strings";
 
 // Run 10: Rare Tomato is a personal, open-source, provided-as-is project. No banner, nothing about legal review or who wrote a page, no "beta",
 // "made-up", "fictional" or "United States only" wording, and nothing that claims to meet any law. These tests scan what people are shown.
@@ -16,7 +16,7 @@ const walk = (dir: string, re: RegExp): string[] =>
   });
 
 /** Lines that are shown to people: everything in the app's screens and shared wording, minus comments. */
-const shownFiles = [...walk(path.join(root, "src/app"), /\.tsx?$/), path.join(root, "src/lib/strings.ts"), path.join(root, "src/lib/agent-guides.ts"), path.join(root, "src/lib/blocked-data.ts"), path.join(root, "src/lib/handler.ts"), path.join(root, "src/lib/mcp.ts"), path.join(root, "src/lib/profile.ts")];
+const shownFiles = [...walk(path.join(root, "src/app"), /\.tsx?$/), path.join(root, "src/lib/strings.ts"), path.join(root, "src/lib/platforms.ts"), path.join(root, "src/lib/blocked-data.ts"), path.join(root, "src/lib/handler.ts"), path.join(root, "src/lib/mcp.ts"), path.join(root, "src/lib/profile.ts")];
 const shownLines = shownFiles.flatMap((f) =>
   fs.readFileSync(f, "utf8").split(/\r?\n/).map((text, i) => ({ f: path.relative(root, f), n: i + 1, text })).filter(({ text }) => !/^\s*(\/\/|\*|\/\*|\{\/\*)/.test(text)),
 );
@@ -68,12 +68,14 @@ describe("what people are shown", () => {
 });
 
 describe("the thumbs-down sheet", () => {
-  it("tells the person what is sent to Anthropic, right under the note field", () => {
-    expect(THUMBS_DISCLOSURE).toBe("This sends the task summary, your feedback and your rules in this category to Anthropic to draft a rule.");
+  it("says in one plain sentence that the feedback goes to Anthropic's AI, right under the note field and above Draft a rule (decision 3, 2026-10-04)", () => {
+    expect(S.sheet.ai).toBe("Your feedback is sent to Anthropic's AI to draft the rule.");
     const form = fs.readFileSync("src/app/feed/FeedbackForm.tsx", "utf8");
     expect(form.indexOf("<textarea")).toBeGreaterThan(-1);
-    expect(form.indexOf("{THUMBS_DISCLOSURE}")).toBeGreaterThan(form.indexOf("<textarea"));
-    expect(form.indexOf("{THUMBS_DISCLOSURE}")).toBeLessThan(form.indexOf("H.send"));
+    expect(form.indexOf("{H.ai}")).toBeGreaterThan(form.indexOf("<textarea"));
+    expect(form.indexOf("{H.ai}")).toBeLessThan(form.indexOf("{H.cta}"));
+    // one sentence, no link, and no claim about storage or privacy
+    expect(S.sheet.ai).not.toMatch(/https?:|stored|store|private|privacy|delete|never|guarantee/i);
   });
 });
 

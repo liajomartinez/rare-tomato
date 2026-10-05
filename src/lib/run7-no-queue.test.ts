@@ -6,7 +6,7 @@ import { tenantDb } from "@/db/tenant";
 import { createTestDb, makeUser } from "@/db/testing";
 import { rulesService } from "./rules";
 import { makeServices } from "./services";
-import { DRAFTING_RULE, S } from "./strings";
+import { S } from "./strings";
 
 // Run 7 (Lia's decision, 2026-10-03): a note on a thumbs-down is optional and there are no waiting drafts. A rule becomes visible to agents ONLY
 // when the person taps Save; Not now deletes the draft; a draft nobody decides on is deleted. These tests keep those promises.
@@ -76,7 +76,7 @@ describe("a draft nobody decides on is deleted, and nothing else is", () => {
     const older = await p.svc.propose(draft({ text: "An older proposal with no expiry." }));
     const saved = await p.svc.propose(draft({ text: "A saved rule that was a draft." , draftExpiresAt: new Date("2026-10-03T11:00:00Z") }));
     if (!expired.ok || !fresh.ok || !older.ok || !saved.ok) throw new Error("setup");
-    await p.svc.approve(saved.rule.id, {}, now);
+    await p.svc.approve(saved.rule.id, now);
     expect(await p.svc.purgeExpiredDrafts(now)).toBe(1);
     const left = (await p.svc.list()).map((r) => r.id).sort();
     expect(left).toEqual([fresh.rule.id, older.rule.id, saved.rule.id].sort());
@@ -89,12 +89,11 @@ describe("the screens", () => {
   const feedActions = read("src/app/feed/actions.ts");
   const form = read("src/app/feed/FeedbackForm.tsx");
 
-  it("Your rules has no 'Waiting for your decision' queue; the draft you were sent for is shown with Save, Save and lock, Edit and Not now", () => {
+  it("Your rules has no 'Waiting for your decision' queue; the draft you were sent for is shown as the Proposed rule with Save rule and Discard", () => {
     expect(rules).not.toContain("Waiting for your decision");
-    for (const needle of ["action={approveRule}", "action={discardDraft}", "NOT_NOW", "S.rules.draftHeading", "SAVE_AS_RULE"]) expect(rules, needle).toContain(needle);
-    // UX-1 revision 1 (owner override): the designed draft has one button. No lock action and no edit-before-save on it.
-    expect(rules).not.toContain('name="lock"');
-    expect(rules).not.toContain("and lock");
+    for (const needle of ["action={approveRule}", "action={discardDraft}", "S.rules.discard", "S.rules.eyebrow", "S.rules.save"]) expect(rules, needle).toContain(needle);
+    // Owner decision 1 (2026-10-04): no lock anywhere. The designed draft has Save rule and Discard, and no edit-before-save on it.
+    expect(rules).not.toMatch(/\b(lock|locked|unlock)/i);
     expect(rules).toContain("r.id === q.draft && r.draftExpiresAt !== null");
   });
 
@@ -105,15 +104,21 @@ describe("the screens", () => {
     expect(rules).not.toContain("dismissRule");
   });
 
-  it("Not now is the person's own tap; Save is still the only approval; no screen approves for them", () => {
+  it("Discard is the person's own tap; Save rule is still the only approval; no screen approves for them", () => {
     expect(actions).toContain("rulesFor(person.id).discard(");
     expect(actions).toContain("rulesFor(person.id).approve(");
     expect(feedActions).not.toMatch(/\.approve\(|editAndApprove\(/);
   });
 
-  it("while the model runs the person sees 'Drafting your rule', and every outcome ends on a page with a visible message", () => {
+  it("while the model runs the whole sheet shows 'Turning your feedback into a rule…' with nothing disabled, and every outcome ends on a page with a visible message", () => {
     expect(form).toContain("H.drafting");
-    expect(S.sheet.drafting).toBe(DRAFTING_RULE);
+    expect(S.sheet.drafting).toBe("Turning your feedback into a rule\u2026");
+    expect(S.sheet.draftingNote).toBe("This usually takes a few seconds.");
+    // the drafting state replaces the sheet's contents: nothing in that branch is disabled
+    const drafting = form.slice(form.indexOf("{pending ? ("), form.indexOf(") : ("));
+    expect(drafting).toContain("draft-bar");
+    expect(drafting).not.toContain("disabled");
+    expect(form).not.toContain("disabled={pending || picked");
     expect(form).toContain("pending");
     expect(feedActions).toContain("DRAFT_FAILED");
     expect(feedActions).toContain("Promise.race");

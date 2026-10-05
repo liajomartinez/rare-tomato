@@ -1,7 +1,7 @@
 import { agentsFor, rulesFor, scoringFor, tasksFor } from "@/db/production";
 import { TASK_CATEGORIES } from "@/lib/tasks";
 import { requireReady } from "@/lib/session";
-import { Nav, Notice, SignedInAs, Sticker, WhoCanSee } from "../ui";
+import { Nav, Notice, SignedInAs } from "../ui";
 import { AGENT_MEMORY_NOTE, MORE_FILTERS, MORE_ON_TASK, S } from "@/lib/strings";
 import { Checks } from "./Checks";
 import { deleteTaskRecord } from "./actions";
@@ -59,7 +59,6 @@ export default async function Feed({
   ]);
   const shown = tasks.slice(0, wanted);
   const olderCount = Math.min(tasks.length - shown.length, MORE_STEP);
-  const logging = agents.filter((a) => a.status === "active").map((a) => a.name);
 
   // Group by day (UTC), keeping the newest-first order.
   const days: { day: string; items: typeof shown }[] = [];
@@ -85,8 +84,12 @@ export default async function Feed({
       <Nav current="feed" />
       <main className="page">
         <h1>{S.feed.title}</h1>
-        <p className="caption hide-wide">{S.feed.note}</p>
-        <p className="pace hide-wide">{S.feed.pace}</p>
+        <p className="caption">{S.feed.intro}</p>
+        <details className="hide-wide">
+          <summary>{S.feed.about}</summary>
+          <p className="caption">{S.feed.aboutNote}</p>
+        </details>
+        <p className="pace">{S.feed.pace}</p>
         {q.message ? <Notice>{q.message}</Notice> : null}
 
         <div className="cols">
@@ -94,7 +97,7 @@ export default async function Feed({
             <div className="row row-tight" role="group" aria-label="Which tasks to show">
               <a className="chip" href={href({ unreviewed: "1" }, ["show"])} aria-current={onlyUnreviewed ? "true" : undefined}>
                 <Tick />
-                {S.feed.filterUnreviewed(toReview)}
+                {S.feed.filterToReview(toReview)}
               </a>
               <a className="chip" href={href({ unreviewed: "0" }, ["show"])} aria-current={!onlyUnreviewed ? "true" : undefined}>
                 <Tick />
@@ -184,13 +187,9 @@ export default async function Feed({
 
           <aside className="stack">
             <div className="card card-quiet only-wide stack stack-3">
-              <div>
-                <Sticker>{S.home.reviewSticker(toReview)}</Sticker>
-              </div>
-              <p className="pace">{S.feed.pace}</p>
-              <p className="caption">{S.feed.note}</p>
+              <h2 style={{ font: "var(--font-h3)" }}>{S.feed.about}</h2>
+              <p className="caption">{S.feed.aboutNote}</p>
             </div>
-            <WhoCanSee title={S.feed.whoTitle} agents={logging} note={S.feed.whoNote} />
           </aside>
         </div>
         <SignedInAs email={person.email} />

@@ -5,7 +5,7 @@ import { AgentAvatar, StatusIcon } from "../ui";
 
 // One entry in the feed. Everything on it is AGENT-REPORTED: it is what the agent chose to tell us.
 // Agent text is shown as plain text only. It is never turned into links, markup or formatting.
-// Layout (the design, SPEC B1): agent avatar, name and time, the "Agent-reported" tag, the text, then "Rate this task" with the two rating buttons.
+// Layout (the design, SPEC B1): agent avatar, name and time, the "Agent-reported" tag, the text, then the two rating buttons.
 
 const OUTCOME: Record<string, string> = { completed: "Completed", failed: "Did not work", needs_user: "Needs you" };
 
