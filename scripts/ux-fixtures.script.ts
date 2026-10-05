@@ -65,10 +65,12 @@ async function seed() {
   const t = tenantDb(db, u.id);
   const claude = await t.agentConnections.insert({ name: "Marge", type: "claude", linkConfirmedAt: new Date(), scopes: ["rules:read", "tasks:write", "profile:basic"], lastSeenAt: new Date() });
   const muse = await t.agentConnections.insert({ name: "Pip", type: "muse", linkConfirmedAt: new Date(), scopes: ["rules:read", "tasks:write", "profile:basic"], lastSeenAt: new Date() });
-  await t.agentConnections.insert({ name: "New agent", needsName: true, suggestedType: "chatgpt", oauthClientId: "client-fixture-chatgpt-0000000001", expiresAt: new Date(Date.now() + 6 * 86_400_000) });
+  const waitingChatgpt = await t.agentConnections.insert({ name: "New agent", needsName: true, suggestedType: "chatgpt", oauthClientId: "client-fixture-chatgpt-0000000001", expiresAt: new Date(Date.now() + 6 * 86_400_000) });
+  ids.waitingChatgpt = waitingChatgpt.id as string;
   await t.agentConnections.insert({ name: "New agent", needsName: true, suggestedType: "muse", oauthClientId: "client-fixture-muse-000000000002", expiresAt: new Date(Date.now() - 86_400_000) });
   await t.agentConnections.insert({ name: "Old Grok", type: "grok", linkConfirmedAt: new Date(Date.now() - 5 * 86_400_000), scopes: ["rules:read"], revokedAt: new Date() });
   await t.auditLog.insert({ agentConnectionId: claude.id, actor: "agent", action: "get_rules", categoriesRead: [] });
+  await t.auditLog.insert({ agentConnectionId: claude.id, actor: "agent", action: "log_task", categoriesRead: [] });
   ids.claude = claude.id as string;
   ids.muse = muse.id as string;
 
@@ -112,7 +114,20 @@ async function seed() {
   // ---- "first": one agent connected, no tasks ----
   const f = await makeUser(db, "first");
   people.first = { id: f.id, email: f.email as string };
-  await tenantDb(db, f.id).agentConnections.insert({ name: "Marge", type: "claude", linkConfirmedAt: new Date(), scopes: ["rules:read", "tasks:write", "profile:basic"] });
+  const firstClaude = await tenantDb(db, f.id).agentConnections.insert({ name: "Marge", type: "claude", linkConfirmedAt: new Date(), scopes: ["rules:read", "tasks:write", "profile:basic"] });
+  ids.firstClaude = firstClaude.id as string;
+
+  // ---- "partial": Claude has checked the rules but has not reported the test task ----
+  const pa = await makeUser(db, "partial");
+  people.partial = { id: pa.id, email: pa.email as string };
+  const partialClaude = await tenantDb(db, pa.id).agentConnections.insert({ name: "Marge", type: "claude", linkConfirmedAt: new Date(), scopes: ["rules:read", "tasks:write", "profile:basic"] });
+  await tenantDb(db, pa.id).auditLog.insert({ agentConnectionId: partialClaude.id, actor: "agent", action: "get_rules", categoriesRead: [] });
+
+  // ---- "museready": Muse has made its first real call ----
+  const mr = await makeUser(db, "museready");
+  people.museready = { id: mr.id, email: mr.email as string };
+  const readyMuse = await tenantDb(db, mr.id).agentConnections.insert({ name: "Pip", type: "muse", linkConfirmedAt: new Date(), scopes: ["rules:read", "tasks:write", "profile:basic"] });
+  await tenantDb(db, mr.id).auditLog.insert({ agentConnectionId: readyMuse.id, actor: "agent", action: "get_rules", categoriesRead: [] });
 
   // ---- "none": nothing connected ----
   const n = await makeUser(db, "none");
@@ -154,9 +169,8 @@ describe("render the screens with fixture data", () => {
     const { default: Account } = await import("@/app/start/account/page");
     const { default: Pick } = await import("@/app/start/agents/page");
     const { default: Setup } = await import("@/app/start/setup/page");
-    const { default: Connect } = await import("@/app/start/connect/page");
-    const { default: Arrived } = await import("@/app/start/arrived/page");
-    const { default: Try } = await import("@/app/start/try/page");
+    const { default: Confirm } = await import("@/app/agents/confirm/page");
+    const { default: Finish } = await import("@/app/agents/finish/page");
     const { default: Profile } = await import("@/app/profile/page");
     const { default: Data } = await import("@/app/data/page");
     const { TaskCard } = await import("@/app/feed/TaskCard");
@@ -179,7 +193,7 @@ describe("render the screens with fixture data", () => {
         },
       ],
       ["rules-draft", "full", {}, async () => (await Rules({ searchParams: sp({ draft: ids.draft }) })) as ReactElement],
-      ["rules-saved", "full", {}, async () => (await Rules({ searchParams: sp({ saved: ids.saved, message: "Saved as a rule. Agents that ask will see it." }) })) as ReactElement],
+      ["rules-saved", "full", {}, async () => (await Rules({ searchParams: sp({ saved: ids.saved, message: "Rule saved. Your connected agents can read it." }) })) as ReactElement],
       ["agents", "full", {}, async () => (await Agents({ searchParams: sp() })) as ReactElement],
       ["home", "full", {}, async () => (await Home()) as ReactElement],
       ["home-first", "first", {}, async () => (await Home()) as ReactElement],
@@ -201,13 +215,17 @@ describe("render the screens with fixture data", () => {
       ["setup-chatgpt", "none", picked, async () => (await Setup({ searchParams: sp({ agent: "chatgpt" }) })) as ReactElement],
       ["setup-grok", "none", picked, async () => (await Setup({ searchParams: sp({ agent: "grok" }) })) as ReactElement],
       ["setup-muse", "none", picked, async () => (await Setup({ searchParams: sp({ agent: "muse" }) })) as ReactElement],
-      ["connect-1", "none", picked, async () => (await Connect({ searchParams: sp({ agent: "claude", step: "1" }) })) as ReactElement],
-      ["connect-2", "none", picked, async () => (await Connect({ searchParams: sp({ agent: "claude", step: "2" }) })) as ReactElement],
-      ["connect-3", "none", picked, async () => (await Connect({ searchParams: sp({ agent: "claude", step: "3" }) })) as ReactElement],
-      ["connect-4", "none", picked, async () => (await Connect({ searchParams: sp({ agent: "claude", step: "4" }) })) as ReactElement],
-      ["arrived", "arrive", picked, async () => (await Arrived({ searchParams: sp({ agent: "claude" }) })) as ReactElement],
-      ["try-waiting", "first", picked, async () => (await Try({ searchParams: sp({ agent: "claude" }) })) as ReactElement],
-      ["try-working", "full", picked, async () => (await Try({ searchParams: sp({ agent: "claude" }) })) as ReactElement],
+      ["setup-claude-instruction", "none", picked, async () => (await Setup({ searchParams: sp({ agent: "claude", step: "instruction" }) })) as ReactElement],
+      ["setup-chatgpt-instruction", "none", picked, async () => (await Setup({ searchParams: sp({ agent: "chatgpt", step: "instruction" }) })) as ReactElement],
+      ["setup-claude-verify-waiting", "first", picked, async () => (await Setup({ searchParams: sp({ agent: "claude", step: "verify" }) })) as ReactElement],
+      ["setup-claude-verify-partial", "partial", picked, async () => (await Setup({ searchParams: sp({ agent: "claude", step: "verify" }) })) as ReactElement],
+      ["setup-claude-verify-ready", "full", picked, async () => (await Setup({ searchParams: sp({ agent: "claude", step: "verify" }) })) as ReactElement],
+      ["setup-grok-another-way", "none", picked, async () => (await Setup({ searchParams: sp({ agent: "grok", another: "1" }) })) as ReactElement],
+      ["setup-muse-ready", "museready", picked, async () => (await Setup({ searchParams: sp({ agent: "muse" }) })) as ReactElement],
+      ["setup-confirm", "arrive", picked, async () => (await Setup({ searchParams: sp({ agent: "claude" }) })) as ReactElement],
+      ["agents-confirm", "full", {}, async () => (await Confirm({ searchParams: sp({ agent: ids.waitingChatgpt }) })) as ReactElement],
+      ["agents-finish-muse", "full", {}, async () => (await Finish({ searchParams: sp({ agent: ids.muse }) })) as ReactElement],
+      ["agents-finish-claude", "first", {}, async () => (await Finish({ searchParams: sp({ agent: ids.firstClaude }) })) as ReactElement],
       [
         "welcome", "none", {},
         async () => {
