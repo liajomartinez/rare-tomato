@@ -113,7 +113,9 @@ describe("Release 1: the reject-reason log", () => {
       const line = JSON.parse(rejectLines()[0]);
       expect(line.reason).toBe(c.reason);
       // Header-level and token-check reasons carry the header's shape; "oauth_not_configured" and "no_subject" (after the token verified) are logged without it.
-      expect(Object.keys(line)).toEqual(["oauth_not_configured", "no_subject"].includes(c.reason) ? ["reason"] : ["reason", "shape"]);
+      // A wrong_audience line also carries the token's aud and the time (see the audience tests below).
+      const keys = ["oauth_not_configured", "no_subject"].includes(c.reason) ? ["reason"] : c.reason === "wrong_audience" ? ["reason", "shape", "aud", "at"] : ["reason", "shape"];
+      expect(Object.keys(line)).toEqual(keys);
     });
   }
 
@@ -132,8 +134,31 @@ describe("Release 1: the reject-reason log", () => {
     for (const secret of [token, expired, wrongAudience, "user_secret_subject_1", "opaque-client-code", "example.authkit.app", "agent-care.vercel.app"]) {
       expect(text).not.toContain(secret);
     }
-    for (const line of rejectLines()) expect(Object.keys(JSON.parse(line))).toEqual(["reason", "shape"]);
+    for (const line of rejectLines()) {
+      const keys = Object.keys(JSON.parse(line));
+      expect(keys).toEqual(JSON.parse(line).reason === "wrong_audience" ? ["reason", "shape", "aud", "at"] : ["reason", "shape"]);
+    }
     expect(rejectLines()).toHaveLength(3);
+  });
+
+  it("for a wrong audience, logs the aud value and the time, and never the token", async () => {
+    const wrongAudience = await sign({ audience: "https://elsewhere.example/mcp" });
+    await handleMcp(request(bearer(wrongAudience)), env());
+    const line = JSON.parse(rejectLines()[0]);
+    expect(line.reason).toBe("wrong_audience");
+    expect(line.aud).toEqual(["https://elsewhere.example/mcp"]);
+    expect(Number.isNaN(Date.parse(line.at))).toBe(false);
+    const [header, payload, signature] = wrongAudience.split(".");
+    const text = allOutput();
+    for (const part of [wrongAudience, header, payload, signature, "user_secret_subject_1", "opaque-client-code", "example.authkit.app"]) expect(text).not.toContain(part);
+  });
+
+  it("logs no aud for any other reason, and keeps a long or odd aud short", async () => {
+    await handleMcp(request(bearer(await sign({ exp: nowSeconds - 120 }))), env());
+    expect(JSON.parse(rejectLines()[0])).not.toHaveProperty("aud");
+    logged = [];
+    await handleMcp(request(bearer(await sign({ audience: "https://x.example/" + "a".repeat(500) }))), env());
+    expect(JSON.parse(rejectLines()[0]).aud[0].length).toBe(200);
   });
 
   it("writes the header's shape, and only the shape", async () => {

@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import { createRemoteJWKSet, jwtVerify, type JWTVerifyGetKey } from "jose";
+import { createRemoteJWKSet, decodeJwt, jwtVerify, type JWTVerifyGetKey } from "jose";
 
 // Two ways in, as the spec describes (section 7.2):
 //   Path A: our own bearer token ("rt_..."), for the demo agent and local testing only. Checked against a hash.
@@ -78,11 +78,27 @@ export function headerShape(header: string | null) {
  * With the Authorization header given, the line also carries its shape (scheme class, length bucket, dot count, character set).
  * It must never change what the caller gets back, so a failing log call is swallowed.
  */
-export function logReject(reason: RejectReason, header?: string | null) {
+export function logReject(reason: RejectReason, header?: string | null, audience?: string[]) {
   try {
-    console.log("mcp-reject", JSON.stringify(header === undefined ? { reason } : { reason, shape: headerShape(header) }));
+    const line = header === undefined ? { reason } : { reason, shape: headerShape(header) };
+    // Only for wrong_audience: the token's `aud` value (a public address, not a secret) and the time, to diagnose which address an agent used.
+    console.log("mcp-reject", JSON.stringify(audience ? { ...line, aud: audience, at: new Date().toISOString() } : line));
   } catch {
     // logging must never change the response
+  }
+}
+
+/**
+ * The `aud` claim of a token, read WITHOUT verifying it (only used after the token already failed on its audience, so the signature was good).
+ * Returns just the audience strings, each cut to 200 characters; never the token, the other claims or the signature.
+ */
+function audienceOf(token: string): string[] | undefined {
+  try {
+    const aud = decodeJwt(token).aud;
+    const list = (Array.isArray(aud) ? aud : aud === undefined ? [] : [aud]).filter((a): a is string => typeof a === "string");
+    return list.slice(0, 5).map((a) => a.slice(0, 200));
+  } catch {
+    return undefined;
   }
 }
 
@@ -159,7 +175,8 @@ export async function authenticate(request: Request, config: AuthConfig): Promis
       if (process.env.DEBUG_TOKEN_CLAIMS === "true") logClaimShape(payload, clientId);
       return { kind: "oauth", subject: payload.sub, clientId, email };
     } catch (e) {
-      logReject(classify(e), header);
+      const reason = classify(e);
+      logReject(reason, header, reason === "wrong_audience" ? audienceOf(token) : undefined);
       return unauthorized(config.resourceMetadataUrl);
     }
   }
