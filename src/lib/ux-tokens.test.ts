@@ -33,13 +33,11 @@ describe("design tokens", () => {
     expect(read("src/app/layout.tsx")).not.toMatch(/next\/font|fonts\.googleapis/);
   });
 
-  it("every non-token value from literals-used-in-screens.json has a name in app-literals.css", () => {
-    const literals = JSON.parse(read("design-source/tokens/literals-used-in-screens.json")) as { radii: Record<string, number>; borders: Record<string, number> };
+  it("every non-token value the screens use directly has a name in app-literals.css", () => {
+    // Revision 8 of the handoff no longer ships literals-used-in-screens.json (it was a list of the mockups' raw values); the names stay, so the
+    // screens keep using them and nothing writes a raw border or radius.
     const css = read("src/app/tokens/app-literals.css");
-    for (const border of Object.keys(literals.borders)) {
-      const raw = border.replace("var(--rt-ink)", "var(--rt-ink)");
-      expect(css, border).toContain(raw);
-    }
+    for (const border of ["2px solid var(--rt-ink)", "1.5px solid var(--rt-line)", "1.5px solid var(--rt-ink)", "2px dashed var(--rt-ink)"]) expect(css, border).toContain(border);
     for (const r of ["3px", "18px", "28px 28px 0 0"]) expect(css, r).toContain(r);
     expect(css).toContain("--rt-scrim");
   });

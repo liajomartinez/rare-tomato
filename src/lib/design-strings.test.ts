@@ -2,17 +2,19 @@ import fs from "node:fs";
 import path from "node:path";
 import vm from "node:vm";
 import { describe, expect, it } from "vitest";
-import { S, STARTER_LINE } from "./strings";
+import { ACCEPT_LABEL, AGENT_INSTRUCTION, GROK_MESSAGE, LINKS, MCP_URL, MUSE_MESSAGE, S, SIGN_UP_CONTINUE } from "./strings";
 
-// The design handoff's strings (design-source/src/strings.js) and the S object in strings.ts must say the same thing, key by key.
-// The differences below are on purpose and are listed in the build report. A new handoff that changes any other string fails this test,
-// which is the cue to read the change and update strings.ts.
+// The design handoff's strings (design-source/copy/strings.js, UX-1 revision 8) and the S object in strings.ts must say the same thing, key by key.
+// The differences below are on purpose and are listed in the build report. A new handoff that changes any other string fails this test, which is the
+// cue to read the change and update strings.ts.
 
 type Tree = { [k: string]: unknown };
-const source = fs.readFileSync(path.join(process.cwd(), "design-source/src/strings.js"), "utf8");
-const sandbox: { window: { S?: Tree } } = { window: {} };
+const source = fs.readFileSync(path.join(process.cwd(), "design-source/copy/strings.js"), "utf8");
+// The handoff file writes to window.* and reads its own globals (INSTRUCTION, MCP_URL), so the sandbox is its own window.
+const sandbox: Tree & { window?: unknown } = {};
+sandbox.window = sandbox;
 vm.runInNewContext(source, sandbox);
-const handoff = sandbox.window.S as Tree;
+const handoff = sandbox.S as Tree;
 
 /** Flatten to "a.b.c" -> text. A function is called with sample arguments so its sentence can be compared too. */
 function flat(node: unknown, prefix = "", out: Record<string, string> = {}): Record<string, string> {
@@ -25,36 +27,17 @@ function flat(node: unknown, prefix = "", out: Record<string, string> = {}): Rec
   return out;
 }
 
-/** Keys that differ on purpose. Each has a reason. */
-const DIFFERENT_ON_PURPOSE: Record<string, string> = {
-  // Muse: owner decision 2026-10-03. Muse is experimental and nobody is told to instruct it in every chat.
-  "muse.chatSentence": "removed (owner decision: no every-chat step for Muse)",
-  "muse.step1": "removed (same)",
-  "muse.next": "removed (same)",
-  "muse.copy": "removed (same)",
-  "muse.facts": "the sentences that tell people to use the chat each time are left out",
-  "onb.setup.titleChat": "removed (same)",
-  "onb.setup.titleChat~text": "removed (same)",
-  "onb.setup.chatOnly": "replaced by onb.setup.experimental",
-  "onb.setup.guides.Muse.kind": "experimental instead of chat",
-  "onb.setup.guides.Muse.intro": "the owner's experimental line",
-  "onb.setup.guides.Muse.steps.0": "removed (paste each time)",
-  "onb.setup.guides.Muse.steps.1": "removed (paste each time)",
-  // The hosted sign-in page asks for the email and decides the method (open item O9).
-  "onb.signup.body": "reworded: we do not email a link",
-  "onb.signup.send": "Continue instead of Email me a link",
-  "onb.signup.email": "not used: no email field here",
-  "onb.signup.emailPh": "not used: no email field here",
-};
+/** Keys that differ on purpose. Each has a reason. (None today: the owner's decisions of 2026-10-04 are all constants outside S, and S matches the handoff.) */
+const DIFFERENT_ON_PURPOSE: Record<string, string> = {};
 /** Keys that exist only in strings.ts. */
-const ONLY_IN_CODE = new Set(["muse.line", "muse.experimental", "onb.setup.museTitle", "onb.setup.experimental"]);
+const ONLY_IN_CODE = new Set<string>();
 
 describe("strings.ts follows the design handoff, key by key", () => {
   const a = flat(handoff);
   const b = flat(S as unknown as Tree);
 
   it("found the handoff's strings", () => {
-    expect(Object.keys(a).length).toBeGreaterThan(300);
+    expect(Object.keys(a).length).toBeGreaterThan(250);
   });
 
   it("every handoff string is in strings.ts with the same words, except the listed differences", () => {
@@ -71,16 +54,29 @@ describe("strings.ts follows the design handoff, key by key", () => {
     for (const k of Object.keys(DIFFERENT_ON_PURPOSE)) expect(a[k] !== b[k], k).toBe(true);
   });
 
-  it("the starter line is the handoff's, in both places", () => {
-    expect(STARTER_LINE).toBe(handoff && (flat(handoff)["starter.line"] as string));
-    expect(STARTER_LINE).toBe(S.onb.setup.line);
+  it("the instruction and the connector address are the handoff's, in both places", () => {
+    expect(AGENT_INSTRUCTION).toBe(sandbox.INSTRUCTION);
+    expect(MCP_URL).toBe(sandbox.MCP_URL);
+    expect(S.onb.setup.grok.msg).toBe(GROK_MESSAGE);
+    expect(S.onb.setup.muse.msg).toBe(MUSE_MESSAGE);
   });
 
-  it("the Muse copy never tells anyone to instruct it in every chat, and has the owner's label and line", () => {
-    const muse = Object.entries(b).filter(([k]) => k.startsWith("muse.") || k.startsWith("onb.setup.guides.Muse"));
-    for (const [k, v] of muse) expect(v, k).not.toMatch(/each time|every chat|each chat|in the chat itself/i);
-    expect(S.muse.experimental).toBe("Experimental");
-    expect(S.muse.line).toBe("Muse connects, but it may not check your rules on its own, and its connection may stop after an hour or two.");
+  it("the sign-up checkbox sentence is the handoff's, joined", () => {
+    expect(S.onb.signup.agree[0] + S.onb.signup.terms + S.onb.signup.agree[1] + S.onb.signup.privacy + S.onb.signup.agree[2]).toBe(ACCEPT_LABEL);
+  });
+
+  it("the one difference in kind: the sign-up button says Continue, because the hosted sign-in page decides how the person signs in", () => {
+    expect(SIGN_UP_CONTINUE).toBe("Continue");
+    expect(S.onb.signup.send).toBe("Email me a link"); // the handoff's own words stay in S, but no screen shows them
+  });
+
+  it("the Open buttons and their links are the handoff's, none opened or tested by us", () => {
+    const links = (sandbox.LINKS ?? {}) as Record<string, { url: string | null }>;
+    expect(Object.keys(LINKS).sort()).toEqual(Object.keys(links).sort());
+    for (const [k, v] of Object.entries(LINKS)) {
+      expect(v.url, k).toBe(links[k].url);
+      expect(v.status, k).toBe("unchecked");
+    }
   });
 
   it("no emoji, and none of the words the product must not use", () => {

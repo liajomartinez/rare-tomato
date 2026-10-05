@@ -1,7 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
-import { AGENT_REPORTED, AGENT_MEMORY_NOTE, BLOCKED_CHECK_NOTE, coverageNote, FEED_NOTE, MUSE_LIMIT, RULES_ADVISORY, RULES_SHORT_NOTE } from "./strings";
+import { AGENT_REPORTED, AGENT_MEMORY_NOTE, BLOCKED_CHECK_NOTE, coverageNote, FEED_NOTE, RULES_ADVISORY, RULES_SHORT_NOTE } from "./strings";
 
 // The copy audit (spec FR-F6, FR-H3, FR-H5, 6.7, 9.3 and CLAUDE.md copy rules). It reads every screen and the shared strings file and fails when
 // the wording promises something the product cannot deliver: enforced rules, verified or independent scores, a guarantee about the
@@ -14,7 +14,7 @@ const walk = (dir: string): string[] =>
     if (e.isDirectory()) return walk(p);
     return /\.(tsx|ts)$/.test(e.name) && !/\.test\./.test(e.name) && !/\.d\.ts$/.test(e.name) ? [p] : [];
   });
-const files = [...walk(path.join(root, "src/app")), path.join(root, "src/lib/strings.ts"), path.join(root, "src/lib/agent-guides.ts")].filter((f) => fs.existsSync(f));
+const files = [...walk(path.join(root, "src/app")), path.join(root, "src/lib/strings.ts"), path.join(root, "src/lib/platforms.ts")].filter((f) => fs.existsSync(f));
 
 /** Lines with words in quotes or JSX text, which is where user-facing copy lives. Comments are skipped. */
 function copyLines(file: string): { line: number; text: string }[] {
@@ -83,8 +83,4 @@ describe("copy audit: nothing promises more than the product does", () => {
     expect(fs.readFileSync(path.join(root, "src/app/data/page.tsx"), "utf8")).toMatch(/own memory/);
   });
 
-  it("the Muse limit is stated as what we saw, not as a cause", () => {
-    expect(MUSE_LIMIT).toMatch(/in our tests/);
-    expect(MUSE_LIMIT).toMatch(/do not yet know why/);
-  });
 });

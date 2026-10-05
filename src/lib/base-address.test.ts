@@ -108,14 +108,15 @@ describe("the contact address", () => {
       if (e.isDirectory()) return walk(p);
       return /\.(tsx?|md)$/.test(e.name) && !/\.test\./.test(e.name) ? [p] : [];
     });
-  const shown = [...walk(path.join(root, "src/app")), path.join(root, "src/lib/strings.ts"), path.join(root, "src/lib/agent-guides.ts"), path.join(root, "src/lib/blocked-data.ts"), path.join(root, "README.md"), ...walk(path.join(root, "docs/guides"))];
+  const shown = [...walk(path.join(root, "src/app")), path.join(root, "src/lib/strings.ts"), path.join(root, "src/lib/platforms.ts"), path.join(root, "src/lib/blocked-data.ts"), path.join(root, "README.md"), ...walk(path.join(root, "docs/guides"))];
 
   it("every page, shared string and user-facing document shows only support@raretomato.ai as an email address", () => {
     const found = shown.flatMap((f) =>
       [...fs.readFileSync(f, "utf8").matchAll(/[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}/g)].map((m) => `${path.relative(root, f)}: ${m[0]}`),
     );
     expect(found.length).toBeGreaterThan(3);
-    expect(found.filter((x) => !x.endsWith(": support@raretomato.ai"))).toEqual([]);
+    // you@example.com is the handoff's reserved example address (an unused placeholder in the handoff's strings); it is never a real contact.
+    expect(found.filter((x) => !x.endsWith(": support@raretomato.ai") && !x.endsWith(": you@example.com"))).toEqual([]);
   });
 
   it("the Privacy Notice and the Terms both show it", () => {

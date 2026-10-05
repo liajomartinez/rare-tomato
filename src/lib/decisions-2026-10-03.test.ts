@@ -4,10 +4,11 @@ import { describe, expect, it } from "vitest";
 import { TOMATO_STAGES } from "./scoring/config";
 import { tomatoFor } from "./scoring/verdict";
 import { UNASSIGNED_LIFETIME_DAYS, UNASSIGNED_LIFETIME_MS } from "./connections";
-import { CARE_SHEET_NAME, SAVE_AS_RULE, SCORE_BAND_LABELS, STILL_LEARNING, unconfirmedAgentNote } from "./strings";
+import { CARE_SHEET_NAME, S, SCORE_BAND_LABELS } from "./strings";
 
-// Lia's decisions of 2026-10-03 (the project notes): O1 the verb, O2 the score-band words (Set C), O8 the real unconfirmed-agent limit,
-// O6 the care sheet's name stays one constant. These tests keep each one from drifting.
+// Lia's decisions of 2026-10-03 (the project notes): O2 the score-band words (Set C), O8 the real unconfirmed-agent limit,
+// O6 the care sheet's name stays one constant. (O1, the verb, was replaced on 2026-10-04 by the handoff's "Draft a rule" and "Save rule".)
+// These tests keep each one from drifting.
 
 const walk = (dir: string): string[] =>
   fs.readdirSync(dir, { withFileTypes: true }).flatMap((e) => {
@@ -18,10 +19,19 @@ const walk = (dir: string): string[] =>
 const sources = walk(path.join(process.cwd(), "src"));
 const text = (f: string) => fs.readFileSync(f, "utf8");
 
-describe("O1: the verb is 'Save as a rule'", () => {
-  it("is the label on the drafted-rule button on Your rules", () => {
-    expect(SAVE_AS_RULE).toBe("Save as a rule");
-    expect(text("src/app/rules/page.tsx")).toContain("{SAVE_AS_RULE}");
+describe("O1 (decision 5, 2026-10-04): the words are the design's", () => {
+  it("Draft a rule, Proposed rule, Save rule and Discard, in that order of the flow", () => {
+    expect(S.sheet.cta).toBe("Draft a rule");
+    expect(S.rules.eyebrow).toBe("Proposed rule");
+    expect(S.rules.save).toBe("Save rule");
+    expect(S.rules.discard).toBe("Discard");
+    expect(text("src/app/rules/page.tsx")).toContain("{S.rules.save}");
+    expect(text("src/app/rules/page.tsx")).toContain("{S.rules.discard}");
+    expect(text("src/app/feed/FeedbackForm.tsx")).toContain("{H.cta}");
+  });
+  it("Your agents, and Needs confirmation for an agent that has signed in but is not confirmed", () => {
+    expect(S.agents.title).toBe("Your agents");
+    expect(S.agents.needsConfirm).toBe("Needs confirmation");
   });
 });
 
@@ -31,7 +41,8 @@ describe("O2: score-band words, Set C", () => {
   });
 
   it("stage 0 is 'Still learning'; the five scored stages carry the other five words in order", () => {
-    expect(STILL_LEARNING.startsWith("Still learning")).toBe(true);
+    expect(SCORE_BAND_LABELS[0]).toBe("Still learning");
+    expect(S.score.learning).toBe("Still learning");
     expect(TOMATO_STAGES.map((s) => s.label)).toEqual(["Needs attention", "Fair", "Okay", "Good", "Very good"]);
   });
 
@@ -49,14 +60,15 @@ describe("O2: score-band words, Set C", () => {
 describe("O8: the unconfirmed-agent limit is the one the product computes", () => {
   it("is built from the lifetime constant, with the real time when there is one", () => {
     expect(UNASSIGNED_LIFETIME_MS).toBe(UNASSIGNED_LIFETIME_DAYS * 24 * 3600 * 1000);
-    expect(unconfirmedAgentNote(null, UNASSIGNED_LIFETIME_DAYS)).toBe(`An agent you do not confirm stops working after ${UNASSIGNED_LIFETIME_DAYS} days.`);
-    expect(unconfirmedAgentNote("2026-10-10 12:00 UTC", 7)).toContain("2026-10-10 12:00 UTC");
-    expect(unconfirmedAgentNote(null, 1)).toContain("1 day.");
+    expect(S.agents.expiry("2026-10-10 12:00 UTC", UNASSIGNED_LIFETIME_DAYS)).toBe(
+      `An agent you do not confirm stops working after ${UNASSIGNED_LIFETIME_DAYS} days. For this one that is 2026-10-10 12:00 UTC.`,
+    );
   });
 
   it("no screen types a clock time or a day count for it by hand", () => {
     for (const f of sources) expect(text(f), f).not.toMatch(/\b\d{1,2}:\d{2}\s?(am|pm)\b/i);
-    expect(text("src/app/agents/page.tsx")).toContain("unconfirmedAgentNote(");
+    expect(text("src/app/agents/confirm/page.tsx")).toContain("UNASSIGNED_LIFETIME_DAYS");
+    expect(text("src/app/start/setup/page.tsx")).toContain("UNASSIGNED_LIFETIME_DAYS");
   });
 });
 
