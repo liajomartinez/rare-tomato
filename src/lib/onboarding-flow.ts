@@ -1,9 +1,8 @@
 import type { AgentType } from "./connections";
-import { S } from "./strings";
 
-// The first-login flow (design handoff, part A): pick agents, then for each one: setup step 1 (the starter line), connect, "is connected", try it.
-// What is remembered between screens is only which agents were picked and whether the person chose "Do this later". Both live in two small
-// cookies (named on the Privacy Notice); nothing about onboarding is stored on the server.
+// The first-login flow (design handoff rev 8, part A): pick one agent, then its setup (Claude and ChatGPT: connect, add the instruction, make sure it works;
+// Grok Bot and Muse: one pasted message), then Continue or Connect another agent. What is remembered between screens is only which agents were picked and
+// whether the person chose "Do this later". Both live in two small cookies (named on the Privacy Notice); nothing about onboarding is stored on the server.
 
 export const FLOW_AGENTS = [
   { key: "claude", name: "Claude", type: "claude" },
@@ -32,13 +31,3 @@ export function nextPicked(picked: FlowAgent[], current: FlowKey): FlowAgent | u
   const i = picked.findIndex((a) => a.key === current);
   return i >= 0 ? picked[i + 1] : undefined;
 }
-
-/** Claude's documented link: it opens the "Add custom connector" dialog with the name and address already filled in. The person still taps Add. */
-export const claudeAddLink = (address: string) =>
-  `https://claude.ai/customize/connectors?modal=add-custom-connector&connectorName=${encodeURIComponent("Rare Tomato")}&connectorUrl=${encodeURIComponent(address)}`;
-
-/** Opens a new Claude chat with the test message ready (Q15 in the handoff: assumed to work, not checked). */
-export const claudeTestLink = () => `https://claude.ai/new?q=${encodeURIComponent(S.onb.connect.s4.message)}`;
-
-/** What the guide data says for one agent (menu names stay data, O11). */
-export const setupGuide = (a: FlowAgent) => S.onb.setup.guides[a.name];

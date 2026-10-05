@@ -58,3 +58,33 @@ export function BackLink({ href }: { href: string }) {
     </div>
   );
 }
+
+/** "Claude · Step 2 of 3" with a segmented bar (SPEC narrow flow): the setup steps of one agent. */
+export function StepBar({ label, n, of = 3 }: { label: string; n: number; of?: number }) {
+  return (
+    <div className="stack stack-2">
+      <div className="progress" role="img" aria-label={`${label} · ${S.onb.stepOf(n, of)}`}>
+        {Array.from({ length: of }, (_, i) => (
+          <i key={i} className={i < n ? "on" : undefined} />
+        ))}
+      </div>
+      <span className="eyebrow">
+        {label} {"·"} {S.onb.stepOf(n, of)}
+      </span>
+    </div>
+  );
+}
+
+/** The footer of a setup screen: a hairline, "Do this later" on the left, the completion action on the right. */
+export function SetupFooter({ later, children }: { later: () => Promise<void>; children?: ReactNode }) {
+  return (
+    <div className="setup-footer">
+      <form action={later}>
+        <button type="submit" className="btn-quiet pull-left">
+          {S.onb.later}
+        </button>
+      </form>
+      {children}
+    </div>
+  );
+}

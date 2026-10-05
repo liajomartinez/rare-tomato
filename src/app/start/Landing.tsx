@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { S } from "@/lib/strings";
-import { Logo, Tag } from "../ui";
+import { Logo, Sticker, Tag } from "../ui";
 
 // The first screen for someone who is signed out (SPEC A1). One primary: create an account. A quiet link: sign in.
 // On a wide screen the tomato picture and the example sit beside the headline, and the three points sit in a row.
@@ -26,13 +26,17 @@ export function Landing() {
     </div>
   );
   const example = (
-    <section className="card" aria-label="An example rule">
+    <section className="card" aria-label={L.example}>
+      <div>
+        <Sticker>{L.example}</Sticker>
+      </div>
       <p className="rule-text">{L.exampleRule}</p>
       <div className="row row-tight">
-        <Tag>Claude</Tag>
-        <Tag>ChatGPT</Tag>
+        <span aria-hidden="true">{"→"}</span>
+        {L.chips.map((c) => (
+          <Tag key={c}>{c}</Tag>
+        ))}
       </div>
-      <p className="caption">{L.exampleNote}</p>
     </section>
   );
   return (
@@ -74,9 +78,18 @@ export function Landing() {
             </div>
           ))}
         </div>
-        <p className="caption" style={{ maxWidth: "70ch" }}>
+        <p className="trust-copy">
+          <b>{L.limitsLead}</b>
           {L.limits}
         </p>
+        <nav className="row" aria-label="Legal">
+          <Link href="/privacy" prefetch={false} className="link">
+            {L.privacy}
+          </Link>
+          <Link href="/terms" prefetch={false} className="link">
+            {L.terms}
+          </Link>
+        </nav>
       </main>
     </>
   );
