@@ -29,6 +29,7 @@ vi.mock("next/navigation", () => ({
   redirect: (to: string) => {
     throw new Error(`REDIRECT ${to}`);
   },
+  useRouter: () => ({ push: () => undefined, refresh: () => undefined }),
 }));
 vi.mock("next/cache", () => ({ revalidatePath: () => undefined }));
 vi.mock("next/server", () => ({ after: () => undefined }));
@@ -170,7 +171,12 @@ describe("render the screens with fixture data", () => {
     const { default: Pick } = await import("@/app/start/agents/page");
     const { default: Setup } = await import("@/app/start/setup/page");
     const { default: Confirm } = await import("@/app/agents/confirm/page");
-    const { default: Finish } = await import("@/app/agents/finish/page");
+    const { default: Roadmap } = await import("@/app/start/roadmap/page");
+    const { OpenCopyScreen } = await import("@/app/start/OpenCopy");
+    const { CheckScreen } = await import("@/app/start/CheckScreen");
+    const { StepHeader, Title: OnbTitle } = await import("@/app/start/onb");
+    const { COPY, MUSE_NOTICE } = await import("@/lib/onboarding-copy");
+    const { Banner, Tag } = await import("@/app/ui");
     const { default: Profile } = await import("@/app/profile/page");
     const { default: Data } = await import("@/app/data/page");
     const { TaskCard } = await import("@/app/feed/TaskCard");
@@ -188,7 +194,7 @@ describe("render the screens with fixture data", () => {
         "feed-sheet", "full", {},
         async () => {
           const view = (await tasksService(db, masters, people.full.id).feed({ limit: 1, withDetails: true }))[0];
-          return createElement("div", null, createElement(Nav, { current: "feed" }), createElement("main", { className: "page" }, createElement("h1", null, "What your agents did"),
+          return createElement("div", null, createElement(Nav, { current: "feed" }), createElement("main", { className: "page" }, createElement("h1", null, "Agent Activity"),
             createElement(TaskCard, { task: view }, createElement(FeedbackForm, { taskId: view.id, initialOpen: true, context: { agent: view.agentName, when: "today 09:14 UTC", text: view.summary } }))));
         },
       ],
@@ -210,22 +216,43 @@ describe("render the screens with fixture data", () => {
           }
         },
       ],
+      ["roadmap", "none", {}, async () => (await Roadmap()) as ReactElement],
       ["pick", "none", {}, async () => (await Pick()) as ReactElement],
-      ["setup-claude", "none", picked, async () => (await Setup({ searchParams: sp({ agent: "claude" }) })) as ReactElement],
-      ["setup-chatgpt", "none", picked, async () => (await Setup({ searchParams: sp({ agent: "chatgpt" }) })) as ReactElement],
-      ["setup-grok", "none", picked, async () => (await Setup({ searchParams: sp({ agent: "grok" }) })) as ReactElement],
-      ["setup-muse", "none", picked, async () => (await Setup({ searchParams: sp({ agent: "muse" }) })) as ReactElement],
-      ["setup-claude-instruction", "none", picked, async () => (await Setup({ searchParams: sp({ agent: "claude", step: "instruction" }) })) as ReactElement],
-      ["setup-chatgpt-instruction", "none", picked, async () => (await Setup({ searchParams: sp({ agent: "chatgpt", step: "instruction" }) })) as ReactElement],
-      ["setup-claude-verify-waiting", "first", picked, async () => (await Setup({ searchParams: sp({ agent: "claude", step: "verify" }) })) as ReactElement],
-      ["setup-claude-verify-partial", "partial", picked, async () => (await Setup({ searchParams: sp({ agent: "claude", step: "verify" }) })) as ReactElement],
-      ["setup-claude-verify-ready", "full", picked, async () => (await Setup({ searchParams: sp({ agent: "claude", step: "verify" }) })) as ReactElement],
-      ["setup-grok-another-way", "none", picked, async () => (await Setup({ searchParams: sp({ agent: "grok", another: "1" }) })) as ReactElement],
-      ["setup-muse-ready", "museready", picked, async () => (await Setup({ searchParams: sp({ agent: "muse" }) })) as ReactElement],
-      ["setup-confirm", "arrive", picked, async () => (await Setup({ searchParams: sp({ agent: "claude" }) })) as ReactElement],
+      ...(["claude", "chatgpt", "grok", "muse"] as const).flatMap((k) => [
+        [`setup-${k}-intro`, "none", picked, async () => (await Setup({ searchParams: sp({ agent: k, step: "intro" }) })) as ReactElement],
+        [`setup-${k}-form`, "none", picked, async () => (await Setup({ searchParams: sp({ agent: k, step: "form" }) })) as ReactElement],
+        [`setup-${k}-wait`, "none", picked, async () => (await Setup({ searchParams: sp({ agent: k, step: "wait" }) })) as ReactElement],
+      ] as [string, keyof typeof people, Record<string, string>, () => Promise<ReactElement>][]),
+      ["setup-claude-confirm", "arrive", picked, async () => (await Setup({ searchParams: sp({ agent: "claude" }) })) as ReactElement],
+      ["setup-claude-instruction", "first", picked, async () => (await Setup({ searchParams: sp({ agent: "claude", step: "instruction" }) })) as ReactElement],
+      ["setup-claude-summary", "first", picked, async () => (await Setup({ searchParams: sp({ agent: "claude", step: "instruction", summary: "1" }) })) as ReactElement],
+      ["setup-claude-check", "first", picked, async () => (await Setup({ searchParams: sp({ agent: "claude", step: "check" }) })) as ReactElement],
+      ["setup-claude-check-partial", "partial", picked, async () => (await Setup({ searchParams: sp({ agent: "claude", step: "check" }) })) as ReactElement],
+      ["setup-claude-check-ready", "full", picked, async () => (await Setup({ searchParams: sp({ agent: "claude", step: "check" }) })) as ReactElement],
+      ["setup-claude-rule", "full", picked, async () => (await Setup({ searchParams: sp({ agent: "claude", step: "rule" }) })) as ReactElement],
+      ["setup-claude-done", "full", picked, async () => (await Setup({ searchParams: sp({ agent: "claude", step: "done" }) })) as ReactElement],
+      ["setup-muse-check", "museready", picked, async () => (await Setup({ searchParams: sp({ agent: "muse", step: "check" }) })) as ReactElement],
       ["agents-confirm", "full", {}, async () => (await Confirm({ searchParams: sp({ agent: ids.waitingChatgpt }) })) as ReactElement],
-      ["agents-finish-muse", "full", {}, async () => (await Finish({ searchParams: sp({ agent: ids.muse }) })) as ReactElement],
-      ["agents-finish-claude", "first", {}, async () => (await Finish({ searchParams: sp({ agent: ids.firstClaude }) })) as ReactElement],
+      // The open, then copy, then paste states, drawn straight from the screen component (the page only ever starts at state 1)
+      ...(
+        [
+          ["c5", "claude", 2, 1, "instr"], ["c5", "claude", 2, 2, "instr"], ["c5", "claude", 2, 3, "instr"], ["c5", "claude", 2, 4, "instr"],
+          ["g5", "chatgpt", 2, 1, "instr"], ["g5", "chatgpt", 2, 2, "instr"], ["g5", "chatgpt", 2, 3, "instr"], ["g5", "chatgpt", 2, 4, "instr"],
+          ["k1", "grok", 1, 1, "msg"], ["k1", "grok", 1, 2, "msg"], ["k1", "grok", 1, 3, "msg"],
+          ["m1", "muse", 1, 1, "msg"], ["m1", "muse", 1, 2, "msg"], ["m1", "muse", 1, 3, "msg"],
+          ["c6", "claude", 2, 1, "chk"], ["c6", "claude", 2, 2, "chk"], ["c6", "claude", 2, 3, "chk"],
+          ["g6", "chatgpt", 2, 1, "chk"], ["g6", "chatgpt", 2, 2, "chk"], ["g6", "chatgpt", 2, 3, "chk"],
+          ["k4", "grok", 2, 1, "chk"], ["k4", "grok", 2, 2, "chk"], ["k4", "grok", 2, 3, "chk"],
+          ["m6", "muse", 2, 1, "chk"], ["m6", "muse", 2, 2, "chk"], ["m6", "muse", 2, 3, "chk"],
+          ["c6", "claude", 2, 0, "none"],
+        ] as const
+      ).map(
+        ([id, key, at, stage, kind]) =>
+          [
+            `state-${id}-${stage}`, "none", {},
+            async () => stateScreen(key, at, stage, kind),
+          ] as [string, keyof typeof people, Record<string, string>, () => Promise<ReactElement>],
+      ),
       [
         "welcome", "none", {},
         async () => {
@@ -242,6 +269,30 @@ describe("render the screens with fixture data", () => {
       ["profile", "full", {}, async () => (await Profile({ searchParams: sp() })) as ReactElement],
       ["data", "full", {}, async () => (await Data({ searchParams: sp() })) as ReactElement],
     ];
+    const stateScreen = (key: "claude" | "chatgpt" | "grok" | "muse", at: number, stage: number, kind: "instr" | "msg" | "chk" | "none"): ReactElement => {
+      const C = COPY[key];
+      const header = createElement(StepHeader, { agent: key, at });
+      // eslint-disable-next-line react/no-children-prop
+      const museTag = key === "muse" ? createElement("div", null, createElement(Tag, { strong: true, children: "Experimental" })) : null;
+      // eslint-disable-next-line react/no-children-prop
+      const museNotice = key === "muse" ? createElement(Banner, { tone: "headsup", children: MUSE_NOTICE }) : null;
+      const OPEN = { claude: "L1", chatgpt: "L4", grok: "L7", muse: "L10" } as const;
+      const CHAT = { claude: "L3", chatgpt: "L6", grok: "L9", muse: "L11" } as const;
+      if (kind === "instr") {
+        const I = C.instr!;
+        // eslint-disable-next-line react/no-children-prop
+        return createElement(OpenCopyScreen, { header, top: createElement(OnbTitle, { body: I.body, children: I.title }), lines: I.lines, text: I.text, linkId: key === "claude" ? "L2" : "L5", openLabel: I.open, goBackLabel: I.goBack, copyLabel: I.copy, savedLabel: I.saved, savedHref: "/", initialStage: stage as 1 | 2 | 3 | 4 });
+      }
+      if (kind === "msg") {
+        const M = C.message!;
+        // eslint-disable-next-line react/no-children-prop
+        return createElement(OpenCopyScreen, { header, top: createElement("div", { className: "stack stack-1" }, museTag, createElement(OnbTitle, { children: M.title }), museNotice), lines: M.lines, text: M.msg, linkId: OPEN[key], openLabel: M.main, goBackLabel: M.goBack, copyLabel: M.copy, initialStage: stage as 1 | 2 | 3 });
+      }
+      return createElement(CheckScreen, {
+        agentId: "x", initial: { firstGetRules: null, firstLogTask: null, status: "active" }, copy: C, chatLink: CHAT[key], headerWaiting: header, headerReady: header, tag: museTag, notice: museNotice, nextHref: "/",
+        instrLink: key === "claude" ? "L2" : undefined, instrLabel: C.instr?.open, initialStage: (stage || 1) as 1 | 2 | 3, initialNotSeen: kind === "none",
+      });
+    };
     const failed: string[] = [];
     for (const [name, who, cookies, render] of jobs) {
       try {

@@ -2,7 +2,8 @@
 
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
-import { FLOW_COOKIE_DAYS, LATER_COOKIE, PICKED_COOKIE, parsePicked } from "@/lib/onboarding-flow";
+import { rulesFor } from "@/db/production";
+import { FLOW_COOKIE_DAYS, flowAgent, LATER_COOKIE, PICKED_COOKIE, parsePicked } from "@/lib/onboarding-flow";
 import { requireReady } from "@/lib/session";
 import { TERMS_VERSION } from "@/lib/strings";
 import { TERMS_COOKIE, TERMS_COOKIE_SECONDS } from "@/lib/terms-cookie";
@@ -44,4 +45,23 @@ export async function doThisLater() {
   const jar = await cookies();
   jar.set(LATER_COOKIE, "1", { maxAge, path: "/", httpOnly: true, sameSite: "lax", secure: true });
   redirect("/");
+}
+
+/**
+ * "Save rule" on Write your first rule. The person's own words become one rule, approved by them in the same tap (so it is active at once), for every
+ * agent. The rule service still checks the text (length, blocked data). If it refuses, the person comes back to the same screen with the reason.
+ */
+export async function saveFirstRule(formData: FormData) {
+  const person = await requireReady();
+  const key = String(formData.get("agent") ?? "");
+  const agent = flowAgent(key);
+  const back = (error?: string) => `/start/setup?agent=${agent?.key ?? "claude"}&step=rule${error ? `&error=${encodeURIComponent(error)}` : ""}`;
+  const text = String(formData.get("text") ?? "").trim();
+  if (!text) redirect(back("Type a rule first."));
+  const svc = rulesFor(person.id);
+  const made = await svc.propose({ text, category: "other", scope: "all", when: "Any task", because: "Your own words from setup." });
+  if (!made.ok) redirect(back(made.message));
+  const approved = await svc.approve(made.rule.id);
+  if (!approved.ok) redirect(back(approved.message));
+  redirect(`/start/setup?agent=${agent?.key ?? "claude"}&step=done`);
 }

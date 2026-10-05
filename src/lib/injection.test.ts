@@ -92,8 +92,9 @@ describe("task text alone can never create a rule", () => {
     .filter((f) => /\.(ts|tsx)$/.test(f) && !/\.test\.(ts|tsx)$/.test(f))
     .map((f) => ({ file: path.relative(process.cwd(), f).replace(/\\/g, "/"), text: fs.readFileSync(f, "utf8") }));
 
-  it("only the rules service and the person's own Your rules actions can approve, edit, retire or resolve a rule", () => {
-    const allowed = new Set(["src/lib/rules.ts", "src/app/rules/actions.ts"]);
+  it("only the rules service and the person's own Your Rules actions can approve, edit, retire or resolve a rule", () => {
+    // src/app/start/actions.ts: "Save rule" on Write your first rule is the person's own tap on their own words (propose then approve in one tap).
+    const allowed = new Set(["src/lib/rules.ts", "src/app/rules/actions.ts", "src/app/start/actions.ts"]);
     const offenders = source.filter((s) => !allowed.has(s.file) && /\.(approve|editAndApprove|resolveConflict|dismiss|retire)\(/.test(s.text)).map((s) => s.file);
     expect(offenders).toEqual([]);
   });

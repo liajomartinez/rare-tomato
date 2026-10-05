@@ -97,3 +97,19 @@
 /* the width the not-yet-designed screens (Your details, Settings and data, Terms, Privacy) keep */
 --measure-legacy:640px;
 }
+:root{
+/* round 9 onboarding (design handoff round 9: one 56px header row, a 560px column on the web, 24px numbered badges) */
+--onb-hdr-h:56px;
+--measure-onb:560px;
+--onb-badge:24px;
+--onb-seg-h:12px;
+--onb-mark-h:32px;
+--radius-seg:6px;
+--line-ink2-thin:1.5px solid var(--rt-ink-2);
+--font-onb-title:var(--fw-bold) 26px/1.15 var(--font-body);
+--font-onb-step:var(--fw-bold) 13px/1.2 var(--font-body);
+--font-onb-line:var(--fw-regular) 15px/1.45 var(--font-body);
+--font-onb-line-on:var(--fw-bold) 15px/1.45 var(--font-body);
+--font-onb-badge:var(--fw-bold) 13px/1 var(--font-body);
+--font-onb-back:var(--fw-bold) 20px/1.2 var(--font-body);
+}

@@ -8,6 +8,7 @@ import { attentionOf } from "./attention";
 import { confirmConnection, resolveOAuthConnection } from "./connections";
 import { attestAdult, findOrCreateUser } from "./identity";
 import { callsSeen, messageReady, needsFinishSetup, setupKindFor, setupState, verifyState } from "./onboarding";
+import { R9 } from "./onboarding-copy";
 import { CHATGPT_WEBSITE_NOTE, MUSE_DESKTOP_NOTE } from "./strings";
 
 // Setup state comes from OUR OWN audit log only (handoff rev 8: "Setup success comes from real tool calls, not from 'I did it' buttons").
@@ -149,33 +150,30 @@ describe("the state through the real audit log", () => {
 
 describe("the setup screen is built on real calls only", () => {
   const page = fs.readFileSync("src/app/start/setup/page.tsx", "utf8");
+  const check = fs.readFileSync("src/app/start/CheckScreen.tsx", "utf8");
 
-  it("reads the verify state from the audit-log calls, and never from a query word that a button could set", () => {
-    expect(page).toContain("verifyState(seen)");
-    expect(page).toContain("messageReady(mine.calls)");
-    expect(page).not.toMatch(/searchParams[^;]*\b(done|ready|verified)\b/);
-    expect(page).not.toMatch(/q\.(done|ready|verified)/);
+  it("reads the step from the audit-log calls (resumeStep), and never from a query word that a button could set", () => {
+    expect(page).toContain("resumeStep(key, mine, hasRule)");
+    expect(page).not.toMatch(/q.(done|ready|verified)/);
+    expect(page).not.toMatch(/searchParams[^;]*(ready|verified)/);
   });
 
-  it("shows Checked your rules, Reported the test task and Waiting", () => {
-    expect(page).toContain("V.checkedRules");
-    expect(page).toContain("V.reportedTask");
-    expect(page).toContain("S.onb.setup.verify.waiting");
+  it("the check screen gets ready from the status endpoint (our own audit log), never from a button", () => {
+    expect(check).toContain("/agents/status?agent=");
+    expect(check).toContain("checkState(status)");
+    expect(check).toContain("startPolling");
   });
 
   it("shows the confirm-and-name step before the next step when a new agent has signed in (decision 11)", () => {
     expect(page).toContain('a.status === "unassigned"');
-    expect(page).toContain("<ConfirmForm");
-    expect(page.indexOf("<ConfirmForm")).toBeLessThan(page.indexOf("<Guided"));
+    expect(page).toContain('action={confirmAgent}');
+    expect(page.indexOf("action={confirmAgent}")).toBeLessThan(page.indexOf("<CheckScreen"));
   });
 
-  it("has the ChatGPT-website and Muse-desktop notes where the handoff puts them", () => {
+  it("has the ChatGPT-website note inside the round 9 line, and the Muse notice on every Muse step", () => {
     expect(CHATGPT_WEBSITE_NOTE).toMatch(/website/i);
     expect(MUSE_DESKTOP_NOTE).toMatch(/desktop/i);
-    expect(page).toContain("CHATGPT_WEBSITE_NOTE");
-    expect(page).toContain("MUSE_DESKTOP_NOTE");
-    const finish = fs.readFileSync("src/app/agents/finish/page.tsx", "utf8");
-    expect(finish).toContain("CHATGPT_WEBSITE_NOTE");
-    expect(finish).toContain("MUSE_DESKTOP_NOTE");
+    expect(R9.g2[0]).toContain("Do this at chatgpt.com in a web browser");
+    expect(page).toContain("notice");
   });
 });

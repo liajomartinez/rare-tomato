@@ -45,16 +45,20 @@ export async function changeAccess(formData: FormData) {
 export async function revokeAgent(formData: FormData) {
   const person = await requireReady();
   const result = await agentsFor(person.id).revoke(text(formData, "id"));
-  done(result.ok ? "Agent disconnected. It stops working from its next request." : result.message);
+  done(result.ok ? "Agent turned off. It stops working from its next request." : result.message);
 }
 
 /** "Reconnect" on an agent that timed out: the old, never-confirmed connection is removed, and the person starts the connection again from the pick screen. */
 export async function reconnectAgent(formData: FormData) {
   const person = await requireReady();
-  const result = await agentsFor(person.id).remove(text(formData, "id"));
+  const id = text(formData, "id");
+  const before = (await agentsFor(person.id).list()).find((x) => x.id === id);
+  const result = await agentsFor(person.id).remove(id);
   if (!result.ok) done(result.message);
   revalidatePath("/agents");
-  redirect("/start/agents");
+  // Back to the first screen of that agent's own setup (the pasted message, or the connector form), or the pick screen if its kind is not known.
+  const type = before?.type ?? before?.suggestedType ?? null;
+  redirect(type && type !== "other" ? `/start/setup?agent=${type}&step=form` : "/start/agents");
 }
 
 export async function removeAgent(formData: FormData) {

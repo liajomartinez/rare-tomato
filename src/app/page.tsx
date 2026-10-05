@@ -6,9 +6,13 @@ import { attentionOf } from "@/lib/attention";
 import { FLOW_AGENTS, LATER_COOKIE, parsePicked, PICKED_COOKIE } from "@/lib/onboarding-flow";
 import { shortDate, TYPE_LABEL } from "@/lib/platforms";
 import { currentSession } from "@/lib/session";
+import { ExpiredCard } from "./agents/ExpiredCard";
 import { attentionBody, attentionTitle, NO_CALLS_YET, S } from "@/lib/strings";
 import { whoCanSeeRule } from "@/lib/agents-view";
+import { COPY, type AgentKey } from "@/lib/onboarding-copy";
+import { railAt, resumeStep } from "@/lib/onboarding-steps";
 import { InstallCard } from "./InstallCard";
+import { RailBar } from "./start/onb";
 import { ScoreCard } from "./ScoreCard";
 import { AgentAvatar, Banner, Nav, SignedInAs, Sticker, WhoCanSee } from "./ui";
 import { Landing } from "./start/Landing";
@@ -52,11 +56,17 @@ export default async function Home() {
   const hasTasks = anyTask.length > 0;
   const live = rules.filter((r) => r.status === "active");
   // A brand-new account goes straight into the first-login flow (SPEC part A). "Do this later" lands on Home instead.
-  if (active.length === 0 && waiting === 0 && !hasTasks && live.length === 0 && picked.length === 0 && !later) redirect("/start/agents");
+  if (active.length === 0 && waiting === 0 && !hasTasks && live.length === 0 && picked.length === 0 && !later) redirect("/start/roadmap");
 
   // The one next step: set up the first picked agent that is not connected yet (Claude when nothing was picked).
-  const notConnected = (picked.length ? picked : FLOW_AGENTS.filter((a) => a.key === "claude")).filter((a) => !active.some((x) => x.type === a.type));
-  const target = notConnected[0] ?? FLOW_AGENTS[0];
+  // The first picked agent (Claude when nothing was picked) whose setup is not finished: Home shows one "Finish setting up" card for it, with the rail where they stopped.
+  const focus = (picked.length ? picked : FLOW_AGENTS.filter((a) => a.key === "claude"))
+    .map((a) => {
+      const key = a.key as AgentKey;
+      const step = resumeStep(key, active.find((x) => x.type === a.type), live.length > 0);
+      return { key, name: a.name, step };
+    })
+    .find((x) => x.step !== "done");
   const readers = whoCanSeeRule(agents, "all");
   const installEligible = active.length > 0 || live.length > 0;
   const attention = attentionOf(agents);
@@ -77,6 +87,16 @@ export default async function Home() {
       </Banner>
     ) : null;
 
+  // An agent whose connection expired shows as its own card on Home, under its own name (never "Old <name>").
+  const expiredCards =
+    attention.timedOut.length > 0 ? (
+      <div className="stack">
+        {attention.timedOut.map((a) => (
+          <ExpiredCard key={a.id} agent={a} />
+        ))}
+      </div>
+    ) : null;
+
   // ---- First visit, and after "Do this later" (SPEC A8): one next step, quiet sections, no score or review yet ----
   if (active.length === 0 || !hasTasks) {
     const none = active.length === 0;
@@ -87,22 +107,22 @@ export default async function Home() {
         {children}
       </section>
     );
-    const next = (
-      <section className="card card-ink card-roomy" aria-label={S.onb.dash.nextEyebrow}>
-        <p className="eyebrow">{S.onb.dash.nextEyebrow}</p>
-        <h2>{none ? N.title(target.name) : S.onb.dash.nextTitle}</h2>
-        <p>{none ? N.body : S.onb.dash.nextBody}</p>
-        {none ? (
-          <Link href={`/start/setup?agent=${target.key}`} prefetch={false} className="btn btn-primary btn-block">
-            {N.button(target.name)}
-          </Link>
-        ) : (
-          <Link href="/rules" prefetch={false} className="btn btn-primary btn-block">
-            {S.onb.dash.nextButton}
-          </Link>
-        )}
+    const next = focus ? (
+      <section className="card card-ink card-roomy" aria-label={COPY[focus.key].finish}>
+        <RailBar agent={focus.key} at={railAt(focus.key, focus.step)} />
+        <Link href={`/start/setup?agent=${focus.key}`} prefetch={false} className="btn btn-primary btn-block">
+          {COPY[focus.key].finish}
+        </Link>
       </section>
-    );
+    ) : live.length === 0 ? (
+      <section className="card card-ink card-roomy" aria-label={S.onb.dash.nextEyebrow}>
+        <h2>{S.onb.dash.nextTitle}</h2>
+        <p>{S.onb.dash.nextBody}</p>
+        <Link href="/rules" prefetch={false} className="btn btn-primary btn-block">
+          {S.onb.dash.nextButton}
+        </Link>
+      </section>
+    ) : null;
     const agentsList = none
       ? picked.length > 0
         ? sec(
@@ -140,22 +160,7 @@ export default async function Home() {
       <div className="stack stack-5">
         {next}
         {agentsList}
-        {!none ? sec(S.onb.dash.reviewHeading, <p className="caption">{S.onb.dash.reviewEmpty(active[0].name)}</p>) : null}
-        {!none
-          ? sec(
-              S.onb.dash.scoreHeading,
-              <div className="row row-nowrap" style={{ alignItems: "flex-start" }}>
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src="/brand/tomato-0-still-learning.png" alt="" aria-hidden="true" width={56} height={56} />
-                <div className="stack stack-1">
-                  <b style={{ font: "var(--font-name-md)" }}>{S.score.learning}</b>
-                  <span className="caption">
-                    {S.score.need(0)} {S.agentReported}.
-                  </span>
-                </div>
-              </div>,
-            )
-          : null}
+        {!none && !focus ? <p className="caption">{S.home.ask(active[0].name)}</p> : null}
       </div>
     );
     const rail = (
@@ -177,11 +182,12 @@ export default async function Home() {
         <main className="page">
           <h1>{S.onb.dash.title}</h1>
           {attentionBanner}
+          {expiredCards}
           <div className="cols">
             {main}
             {rail}
           </div>
-          <p className="caption">Add your details on <Link href="/profile">Your details</Link>. Nothing is shared with an agent until you confirm it.</p>
+          <p className="caption">Add your saved details on <Link href="/profile">Your Info</Link>. Nothing is shared with an agent until you confirm it.</p>
           <SignedInAs email={session.person.email} />
         </main>
       </>
@@ -239,6 +245,7 @@ export default async function Home() {
       <main className="page">
         <h1 className="home-title">{S.home.welcome}</h1>
         {attentionBanner}
+        {expiredCards}
         <div className="cols cols-home">
           <div className="stack">
             {scoreCards.length > 0 ? (
@@ -253,7 +260,7 @@ export default async function Home() {
             <WhoCanSee title={S.home.whoTitle} agents={readers} />
           </div>
         </div>
-        <p className="caption">Add your details on <Link href="/profile">Your details</Link>. Nothing is shared with an agent until you confirm it.</p>
+        <p className="caption">Add your saved details on <Link href="/profile">Your Info</Link>. Nothing is shared with an agent until you confirm it.</p>
         <SignedInAs email={session.person.email} />
       </main>
     </>
