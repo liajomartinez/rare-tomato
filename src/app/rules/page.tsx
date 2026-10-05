@@ -1,23 +1,15 @@
 import { agentsFor, feedbackFor, rulesFor, tasksFor } from "@/db/production";
 import { whoCanSeeRule } from "@/lib/agents-view";
-import { REASONS } from "@/lib/feedback-reasons";
 import { STRENGTHS, type RuleRecord } from "@/lib/rules";
 import { requireReady } from "@/lib/session";
 import { Banner, Nav, Notice, SignedInAs, Sticker, Tag, WhoCanSee } from "../ui";
 import { ConflictPanel, hasContradiction, overlapsFor } from "./ConflictPanel";
-import { AGENT_MEMORY_NOTE, DRAFT_GONE, EDIT_THEN_APPROVE, NOT_NOW, OLD_PROPOSALS_HEADING, OLD_PROPOSALS_NOTE, S, SAVE_AS_RULE } from "@/lib/strings";
-import { approveRule, deleteRule, discardDraft, editRule, lockRule, resolveRule, retireRule } from "./actions";
+import { AGENT_MEMORY_NOTE, DRAFT_GONE, EDIT_THEN_APPROVE, OLD_PROPOSALS_HEADING, OLD_PROPOSALS_NOTE, S } from "@/lib/strings";
+import { approveRule, deleteRule, discardDraft, editRule, resolveRule } from "./actions";
 
 export const dynamic = "force-dynamic";
 
 const STRENGTH_LABEL: Record<string, string> = { prefer: "Prefer", always: "Always", never: "Never" };
-const reasonLabel = (code: string) => REASONS.find((r) => r.code === code)?.label ?? code;
-const time = (d: Date, now = new Date()) => {
-  const day = d.toISOString().slice(0, 10);
-  const today = now.toISOString().slice(0, 10);
-  const yesterday = new Date(now.getTime() - 86_400_000).toISOString().slice(0, 10);
-  return `${day === today ? "today" : day === yesterday ? "yesterday" : day} ${d.toISOString().slice(11, 16)} UTC`;
-};
 const day = (d: Date) => d.toISOString().slice(0, 10);
 
 function EditForm({ rule }: { rule: RuleRecord }) {
@@ -59,7 +51,7 @@ function EditForm({ rule }: { rule: RuleRecord }) {
   );
 }
 
-type Words = { taskId: string; note?: string; source?: "person" | "agent_reported"; reasons: string[]; agent: string | null; when: string | null } | null;
+type Words = { taskId: string; note?: string; source?: "person" | "agent_reported"; agent: string | null } | null;
 
 /** The rule's own details (when it applies, how strong) in a small caption. */
 function Details({ rule, scope }: { rule: RuleRecord; scope: string }) {
@@ -96,12 +88,12 @@ export default async function Rules({ searchParams }: { searchParams: Promise<{ 
     const f = await fb.getWithNote(r.sourceFeedbackId);
     if (!f) return null;
     const task = await tasksFor(person.id).get(f.taskId);
-    return { taskId: f.taskId, note: f.note, source: f.source, reasons: f.reasonCodes.map(reasonLabel), agent: task ? agentName.get(task.connectionId) ?? null : null, when: time(f.createdAt) };
+    return { taskId: f.taskId, note: f.note, source: f.source, agent: task ? agentName.get(task.connectionId) ?? null : null };
   };
 
   const newest = (a: RuleRecord, b: RuleRecord) => b.createdAt.getTime() - a.createdAt.getTime();
   const proposed = rules.filter((r) => r.status === "proposed").sort(newest);
-  const live = rules.filter((r) => r.status === "active" || r.status === "locked").sort((a, b) => Number(b.status === "locked") - Number(a.status === "locked") || newest(a, b));
+  const live = rules.filter((r) => r.status === "active").sort(newest);
   const retired = rules.filter((r) => r.status === "retired").sort(newest);
   // Run 7: no queue of waiting drafts. The draft you were just sent here for is shown on its own; a draft you did not decide on is deleted after
   // about half an hour. Proposals with no expiry (an agent's reported correction, or drafted before run 7) are shown once, in their own section.
@@ -114,41 +106,28 @@ export default async function Rules({ searchParams }: { searchParams: Promise<{ 
   const listed = justSaved ? [justSaved, ...live.filter((r) => r.id !== justSaved.id)] : live;
   const readers = (scope: string) => whoCanSeeRule(agents, scope);
 
-  // The new rule (not saved yet). The designed draft has ONE button: Save as a rule (UX-1 revision 1). An older proposal (not designed) keeps Not now.
+  // The proposed rule (not saved yet), as designed: eyebrow and a "Not saved yet" tag, the rule, where it came from, who can use it, then Save rule and Discard.
+  // An older proposal (an agent's reported correction, or one drafted before drafts were shown right away) uses the same card and keeps its editing.
   const proposal = (r: RuleRecord, words: Words, designed: boolean) => {
     const overlaps = overlapsFor(r, rules);
     const blocked = hasContradiction(overlaps);
     return (
-      <section key={r.id} id={`proposal-${r.id}`} className="card card-dashed stack" aria-label={S.rules.draftHeading}>
-        <p className="eyebrow">{S.rules.draftHeading}</p>
+      <section key={r.id} id={`proposal-${r.id}`} className="card card-dashed stack" aria-label={S.rules.eyebrow}>
+        <div className="row row-between row-tight">
+          <p className="eyebrow">{S.rules.eyebrow}</p>
+          <Tag>{S.rules.notSaved}</Tag>
+        </div>
         <p className="rule-text">{r.text}</p>
         <div className="stack stack-3">
           {words ? (
             <>
-              <div className="stack stack-2">
-                <span className="label-sm">{S.rules.fromHeading}</span>
-                {words.source === "agent_reported" ? (
-                  <span className="caption">
-                    Your agent reported that you said this{words.note ? <>: “{words.note}”</> : null}. This came from the agent, not from you, so please check it matches what you meant.
-                  </span>
-                ) : (
-                  <span className="caption">{S.rules.fromReason(words.agent ?? "an agent", words.when ?? "")}</span>
-                )}
-              </div>
-              {words.reasons.length > 0 ? (
-                <div className="row row-tight">
-                  {words.reasons.map((x) => (
-                    <Tag key={x}>{x}</Tag>
-                  ))}
-                </div>
-              ) : null}
-              {words.note ? (
-                <p className="caption">
-                  <b>{S.rules.yourNote}:</b> “{words.note}”
-                </p>
-              ) : words.source !== "agent_reported" ? (
-                <p className="caption">{S.rules.reasonOnly}</p>
-              ) : null}
+              {words.source === "agent_reported" ? (
+                <span className="caption">
+                  Your agent reported that you said this{words.note ? <>: “{words.note}”</> : null}. This came from the agent, not from you, so please check it matches what you meant.
+                </span>
+              ) : (
+                <span className="caption">{S.rules.source(words.agent ?? "an agent")}</span>
+              )}
               <a className="link" href={`/feed#task-${words.taskId}`}>
                 {S.rules.seeSource}
               </a>
@@ -158,40 +137,39 @@ export default async function Rules({ searchParams }: { searchParams: Promise<{ 
           {designed ? null : <Details rule={r} scope={scopeLabel(r.scope)} />}
         </div>
         <ConflictPanel rule={r} overlaps={overlaps} resolve={resolveRule} scopeLabel={scopeLabel} />
+        <WhoRow label={S.rules.scope} names={readers(r.scope)} />
         <div className="stack rule-above">
           {blocked ? (
             <p className="caption">To save this rule, choose replace, keep both, or merge above.</p>
           ) : (
-            <form action={approveRule}>
-              <input type="hidden" name="id" value={r.id} />
-              <button type="submit" className={designed ? "btn-primary btn-block" : "btn-block"}>
-                {SAVE_AS_RULE}
-              </button>
-            </form>
-          )}
-          <p className="caption">{S.rules.draftNote}</p>
-          {designed ? null : (
-            <div className="row">
-              {blocked ? null : (
-                <details>
-                  <summary className="as-button">{EDIT_THEN_APPROVE}</summary>
-                  <EditForm rule={r} />
-                </details>
-              )}
+            <div className="actions">
+              <form action={approveRule}>
+                <input type="hidden" name="id" value={r.id} />
+                <button type="submit" className="btn-primary btn-block">
+                  {S.rules.save}
+                </button>
+              </form>
               <form action={discardDraft}>
                 <input type="hidden" name="id" value={r.id} />
-                <button type="submit">{NOT_NOW}</button>
+                <button type="submit" className="btn-block">
+                  {S.rules.discard}
+                </button>
               </form>
             </div>
           )}
+          {designed || blocked ? null : (
+            <details>
+              <summary className="as-button">{EDIT_THEN_APPROVE}</summary>
+              <EditForm rule={r} />
+            </details>
+          )}
         </div>
-        <WhoRow label={S.rules.wouldSee} names={readers(r.scope)} />
       </section>
     );
   };
 
   const ruleRow = (r: RuleRecord, isNew: boolean) => (
-    <div key={r.id} id={`rule-${r.id}`} className={`rule-row${isNew ? " rule-row-new" : ""} stack stack-2`} aria-label={r.status === "locked" ? "Locked rule" : "Active rule"}>
+    <div key={r.id} id={`rule-${r.id}`} className={`rule-row${isNew ? " rule-row-new" : ""} stack stack-2`} aria-label="Rule">
       {isNew ? (
         <div>
           <Tag strong>{S.rules.justSaved}</Tag>
@@ -199,10 +177,7 @@ export default async function Rules({ searchParams }: { searchParams: Promise<{ 
       ) : null}
       <p className="rule-row-text">{r.text}</p>
       <div className="row row-between row-tight">
-        <div className="row">
-          <span className="caption">{S.rules.added(day(r.approvedAt ?? r.createdAt))}</span>
-          {r.status === "locked" ? <Tag>{S.rules.locked}</Tag> : null}
-        </div>
+        <span className="caption">{S.rules.added(day(r.approvedAt ?? r.createdAt))}</span>
         <div className="row row-tight pull-right">
           <a className="btn btn-quiet" href={`#edit-${r.id}`}>
             {S.rules.editShort}
@@ -215,31 +190,10 @@ export default async function Rules({ searchParams }: { searchParams: Promise<{ 
           </form>
         </div>
       </div>
-      <p className="caption">Visible to: {readers(r.scope).join(", ") || "no agent right now"}</p>
-      <Details rule={r} scope={scopeLabel(r.scope)} />
       <details id={`edit-${r.id}`}>
         <summary>{EDIT_THEN_APPROVE}</summary>
+        <Details rule={r} scope={scopeLabel(r.scope)} />
         <EditForm rule={r} />
-      </details>
-      <details>
-        <summary>{S.agents.details}</summary>
-        <div className="row">
-          {r.status === "active" ? (
-            <form action={lockRule}>
-              <input type="hidden" name="id" value={r.id} />
-              <button type="submit" className="btn-sm">
-                Lock
-              </button>
-            </form>
-          ) : null}
-          <form action={retireRule}>
-            <input type="hidden" name="id" value={r.id} />
-            <button type="submit" className="btn-sm">
-              Stop using this rule
-            </button>
-          </form>
-        </div>
-        <p className="caption">{AGENT_MEMORY_NOTE}</p>
       </details>
     </div>
   );
@@ -263,7 +217,8 @@ export default async function Rules({ searchParams }: { searchParams: Promise<{ 
               <Sticker>{S.rules.justSaved}</Sticker>
             </div>
             <p className="rule-text">{justSaved.text}</p>
-            <WhoRow label={S.rules.readBy} names={readers(justSaved.scope)} />
+            <WhoRow label={S.rules.availableTo} names={readers(justSaved.scope)} />
+            <p className="caption">{S.rules.added("just now")}</p>
             <a className="link" href={`#rule-${justSaved.id}`}>
               {S.rules.findIt} {"↓"}
             </a>
@@ -289,7 +244,10 @@ export default async function Rules({ searchParams }: { searchParams: Promise<{ 
         {listed.length === 0 ? (
           <p className="caption">None yet. No agent sees a rule until you save one.</p>
         ) : (
-          <div className="rules-list">{listed.map((r) => ruleRow(r, r.id === justSaved?.id))}</div>
+          <>
+            <div className="rules-list">{listed.map((r) => ruleRow(r, r.id === justSaved?.id))}</div>
+            <p className="caption">{S.rules.delNote}</p>
+          </>
         )}
       </div>
 
@@ -315,7 +273,7 @@ export default async function Rules({ searchParams }: { searchParams: Promise<{ 
     </div>
   );
 
-  const who = <WhoCanSee title={S.rules.whoTitle} agents={readers("all")} note={S.rules.whoNote} />;
+  const who = <WhoCanSee title={S.rules.whoTitle} agents={readers("all")} note={S.agents.whoNote} />;
 
   return (
     <>
