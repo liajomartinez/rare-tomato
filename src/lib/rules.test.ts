@@ -50,15 +50,16 @@ describe("rule lifecycle (FR-E2, FR-E5)", () => {
     expect(served.map((s) => s.id)).toEqual([r.id]);
   });
 
-  it("a draft cannot carry its own status, and every route to active or locked leaves an approval record", async () => {
+  it("a draft cannot carry its own status, and every route to active leaves an approval record", async () => {
     const p = await person("noside");
     const r = ok(await p.svc.propose(draft()));
     const sneaky = ok(await p.svc.propose(draft({ status: "active" })));
     expect(sneaky.status).toBe("proposed");
-    await p.svc.approve(r.id, { lock: true });
+    await p.svc.approve(r.id);
     const edited = ok(await p.svc.editAndApprove(r.id, draft({ text: "Ask me first" })));
     const audit = (await p.t.auditLog.list()).map((a) => a.action as string);
-    expect(audit).toContain(`rule_locked:${r.id}`);
+    expect(audit).toContain(`rule_approved:${r.id}`);
+    expect(audit.some((a) => a.startsWith("rule_locked"))).toBe(false);
     expect(audit).toContain(`rule_edited_and_approved:${edited.id}`);
   });
 
@@ -81,27 +82,25 @@ describe("rule lifecycle (FR-E2, FR-E5)", () => {
     expect((await p.svc.servedTo(p.conn)).map((s) => s.id)).toEqual([v2.id]);
   });
 
-  it("a locked rule stays locked when edited, and a retired rule is not served", async () => {
-    const p = await person("lockedit");
+  it("an edited rule stays active, and a retired rule is not served", async () => {
+    const p = await person("editactive");
     const r = ok(await p.svc.propose(draft()));
-    await p.svc.approve(r.id, { lock: true });
+    await p.svc.approve(r.id);
     const v2 = ok(await p.svc.editAndApprove(r.id, draft()));
-    expect(v2.status).toBe("locked");
+    expect(v2.status).toBe("active");
     await p.svc.retire(v2.id);
     expect(await p.svc.servedTo(p.conn)).toHaveLength(0);
   });
 
-  it("the person can lock an active rule, and only an active one; a locked rule then comes first", async () => {
-    const p = await person("lock");
-    const a = ok(await p.svc.propose(draft({ when: "a much longer and narrower condition than the other one" })));
-    const b = ok(await p.svc.propose(draft({ when: "short" })));
-    expect((await p.svc.lock(a.id)).ok).toBe(false); // still only proposed
+  it("there is no way to lock a rule: the service has no lock, and a stored 'locked' row is read as active", async () => {
+    const p = await person("nolock");
+    expect("lock" in p.svc).toBe(false);
+    const a = ok(await p.svc.propose(draft()));
     await p.svc.approve(a.id);
-    await p.svc.approve(b.id);
-    expect((await p.svc.servedTo(p.conn)).map((r) => r.id)).toEqual([a.id, b.id]);
-    ok(await p.svc.lock(b.id));
-    expect((await p.svc.servedTo(p.conn)).map((r) => r.id)).toEqual([b.id, a.id]);
-    expect((await p.t.auditLog.list()).some((x) => x.actor === "user" && x.action === `rule_locked:${b.id}`)).toBe(true);
+    // An old row that still carries the retired value is read as active, so it is never lost or hidden.
+    await p.t.rules.update(a.id, { status: "locked" });
+    expect((await p.svc.get(a.id))?.status).toBe("active");
+    expect((await p.svc.servedTo(p.conn)).map((r) => r.id)).toEqual([a.id]);
   });
 
   it("turning down a proposed rule ('not quite') keeps it as history, never serves it, and cannot be done to an approved rule", async () => {
@@ -152,14 +151,6 @@ describe("precedence order (FR-E4, FR-E6, spec 6.4)", () => {
   const base = { scope: "all", when: "x", createdAt: new Date("2026-01-01") };
   const mk = (id: string, over: Record<string, unknown> = {}) => ({ id, status: "active" as const, ...base, ...over }) as RuleRecord;
 
-  it("locked beats everything, even an agent-specific narrower newer rule", () => {
-    const order = orderRules([
-      mk("specific", { scope: "agent:1", when: "a long narrow condition", createdAt: new Date("2026-06-01") }),
-      mk("locked", { status: "locked" }),
-    ]);
-    expect(order.map((r) => r.id)).toEqual(["locked", "specific"]);
-  });
-
   it("then agent-specific, then narrower when, then newer, then id", () => {
     const order = orderRules([
       mk("d-old"),
@@ -181,7 +172,7 @@ describe("precedence order (FR-E4, FR-E6, spec 6.4)", () => {
   });
 
   it("the order does not depend on the input order", () => {
-    const rules = [mk("a", { when: "aaa" }), mk("b", { status: "locked" }), mk("c", { scope: "agent:1" }), mk("d")];
+    const rules = [mk("a", { when: "aaa" }), mk("b"), mk("c", { scope: "agent:1" }), mk("d")];
     expect(orderRules(rules).map((r) => r.id)).toEqual(orderRules([...rules].reverse()).map((r) => r.id));
   });
 });

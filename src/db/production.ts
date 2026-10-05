@@ -104,7 +104,7 @@ export function scoringFor(userId: string) {
   };
 }
 
-/** For the website's server code: one person's rules (list, approve, edit, lock, turn down). */
+/** For the website's server code: one person's rules (list, approve, edit, turn down). */
 export function rulesFor(userId: string) {
   return rulesService(getDb(), userId);
 }

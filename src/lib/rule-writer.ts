@@ -159,7 +159,7 @@ export function ruleWriter(db: Db, masters: MasterKeys, userId: string, model: M
       }
 
       const existing = (await rulesService(db, userId).list())
-        .filter((r) => (r.status === "active" || r.status === "locked") && r.category === task.category)
+        .filter((r) => r.status === "active" && r.category === task.category)
         .slice(0, 10);
       const labels = fb.reasonCodes.map((c) => REASONS.find((r) => r.code === c)?.label ?? c);
       const user = [

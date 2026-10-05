@@ -7,8 +7,10 @@ import { TASK_CATEGORIES } from "./tasks";
 
 // Rules are advice the person has approved for how their agents should act (spec 5.4, 6.4).
 // Nothing here forces an agent to follow a rule; agents pull rules and may ignore them.
-// A rule becomes active or locked ONLY through approve() or editAndApprove(), which record an approval
-// event made by the person (FR-E5). There is no other code path that sets those statuses.
+// A rule becomes active ONLY through approve() or editAndApprove(), which record an approval
+// event made by the person (FR-E5). There is no other code path that sets that status.
+// There is no "locked" state any more (owner decision, 2026-10-04). The database enum still holds the old value because Postgres cannot
+// drop an enum value easily; migration 0010 turned every locked rule into an active one, and nothing in the code uses the value.
 
 export const RULE_LIMITS = { text: 300, when: 200, action: 300, because: 500 } as const;
 export const STRENGTHS = ["prefer", "always", "never"] as const;
@@ -40,7 +42,7 @@ export interface RuleRecord {
   text: string;
   category: string;
   scope: string;
-  status: "proposed" | "active" | "locked" | "retired";
+  status: "proposed" | "active" | "retired";
   version: number;
   supersedesId: string | null;
   sourceFeedbackId: string | null;
@@ -115,7 +117,8 @@ function toRecord(r: Row): RuleRecord {
     text: r.text as string,
     category: r.category as string,
     scope: r.scope as string,
-    status: r.status as RuleRecord["status"],
+    // A row that somehow still says "locked" is read as active, so it is never lost or hidden.
+    status: (r.status === "locked" ? "active" : r.status) as RuleRecord["status"],
     version: r.version as number,
     supersedesId: (r.supersedesId as string | null) ?? null,
     sourceFeedbackId: (r.sourceFeedbackId as string | null) ?? null,
@@ -133,15 +136,14 @@ function toRecord(r: Row): RuleRecord {
 }
 
 /**
- * The fixed order agents see (spec 6.4): locked first, then rules for one specific agent, then a narrower
+ * The fixed order agents see (spec 6.4): rules for one specific agent first, then a narrower
  * `when` (PROVISIONAL: taken as the longer condition text, a rough stand-in until a better measure is chosen;
  * see the limitation test and spec 6.4), then newer,
  * then id so the order never depends on how the database returned the rows.
  */
-export function orderRules<T extends Pick<RuleRecord, "id" | "status" | "scope" | "when" | "createdAt">>(rules: T[]): T[] {
+export function orderRules<T extends Pick<RuleRecord, "id" | "scope" | "when" | "createdAt">>(rules: T[]): T[] {
   return [...rules].sort(
     (a, b) =>
-      Number(b.status === "locked") - Number(a.status === "locked") ||
       Number(b.scope !== "all") - Number(a.scope !== "all") ||
       b.when.length - a.when.length ||
       b.createdAt.getTime() - a.createdAt.getTime() ||
@@ -157,23 +159,23 @@ export function rulesService(db: Db, userId: string) {
     return row ? toRecord(row) : null;
   }
 
-  async function recordApproval(ruleId: string, action: "rule_approved" | "rule_edited_and_approved" | "rule_locked" | "rule_retired" | "rule_dismissed" | "rule_replaced") {
+  async function recordApproval(ruleId: string, action: "rule_approved" | "rule_edited_and_approved" | "rule_retired" | "rule_dismissed" | "rule_replaced") {
     // The person did this, so the actor is "user". Only the rule id is stored, never its text.
     await t.auditLog.insert({ actor: "user", action: `${action}:${ruleId}`, categoriesRead: [] });
   }
 
   async function liveIds(): Promise<Set<string>> {
-    return new Set(((await t.rules.list()) as Row[]).filter((r) => r.status === "active" || r.status === "locked").map((r) => r.id as string));
+    return new Set(((await t.rules.list()) as Row[]).map(toRecord).filter((r) => r.status === "active").map((r) => r.id));
   }
 
-  /** The one place a proposed rule becomes active or locked. Only the approval paths below call it (FR-E5). */
-  async function activate(id: string, opts: { lock?: boolean; conflictsWith: string[]; now: Date }): Promise<RuleResult> {
+  /** The one place a proposed rule becomes active. Only the approval paths below call it (FR-E5). */
+  async function activate(id: string, opts: { conflictsWith: string[]; now: Date }): Promise<RuleResult> {
     const row0 = await t.rules.get(id);
     const { draft_expires_at: _draft, ...kept } = (row0?.structured as Record<string, unknown>) ?? {};
     void _draft; // a saved rule is no longer a draft
     const structured = { ...kept, ...(opts.conflictsWith.length ? { conflicts_with: opts.conflictsWith } : {}) };
-    const row = await t.rules.update(id, { status: opts.lock ? "locked" : "active", approvedAt: opts.now, approvedBy: userId, structured });
-    await recordApproval(id, opts.lock ? "rule_locked" : "rule_approved");
+    const row = await t.rules.update(id, { status: "active", approvedAt: opts.now, approvedBy: userId, structured });
+    await recordApproval(id, "rule_approved");
     return { ok: true, rule: toRecord(row as Row) };
   }
 
@@ -215,18 +217,18 @@ export function rulesService(db: Db, userId: string) {
     },
 
     /**
-     * The person approves a proposed rule. Optionally locks it so it always wins (FR-E6).
+     * The person approves a proposed rule. It is active at once, for the agents that can use it.
      * If the conflict check found a contradiction with a live rule, a plain approval is refused: the person must choose
      * replace, keep both or merge (FR-E3). Overlaps that are not contradictions are kept side by side and recorded.
      */
-    async approve(id: string, opts: { lock?: boolean } = {}, now = new Date()): Promise<RuleResult> {
+    async approve(id: string, now = new Date()): Promise<RuleResult> {
       const rule = await load(id);
       if (!rule) return fail("not_found", "No such rule.");
       if (rule.status !== "proposed") return fail("wrong_state", "Only a proposed rule can be approved.");
       const live = await liveIds();
       const open = (rule.conflictCheck?.results ?? []).filter((r) => live.has(r.ruleId) && r.verdict !== "independent" && r.verdict !== "unchecked");
       if (open.some((r) => r.verdict === "contradicts")) return fail("needs_choice", "This rule contradicts one of your rules. Choose whether to replace it, keep both, or merge them.");
-      return activate(id, { lock: opts.lock, conflictsWith: open.map((r) => r.ruleId), now });
+      return activate(id, { conflictsWith: open.map((r) => r.ruleId), now });
     },
 
     /**
@@ -235,7 +237,7 @@ export function rulesService(db: Db, userId: string) {
      */
     async resolveConflict(
       id: string,
-      choice: { kind: "replace" | "keep_both" | "merge"; targetId: string; lock?: boolean; draft?: RuleDraft },
+      choice: { kind: "replace" | "keep_both" | "merge"; targetId: string; draft?: RuleDraft },
       now = new Date(),
     ): Promise<RuleResult> {
       const rule = await load(id);
@@ -243,11 +245,11 @@ export function rulesService(db: Db, userId: string) {
       if (rule.status !== "proposed") return fail("wrong_state", "Only a proposed rule can be resolved.");
       const target = await load(choice.targetId);
       const flagged = (rule.conflictCheck?.results ?? []).some((r) => r.ruleId === choice.targetId);
-      if (!target || !flagged || (target.status !== "active" && target.status !== "locked")) return fail("invalid_input", "That is not one of the rules this proposal overlaps.");
+      if (!target || !flagged || target.status !== "active") return fail("invalid_input", "That is not one of the rules this proposal overlaps.");
 
-      if (choice.kind === "keep_both") return activate(id, { lock: choice.lock, conflictsWith: [target.id], now });
+      if (choice.kind === "keep_both") return activate(id, { conflictsWith: [target.id], now });
       if (choice.kind === "replace") {
-        const made = await activate(id, { lock: choice.lock || target.status === "locked", conflictsWith: [], now });
+        const made = await activate(id, { conflictsWith: [], now });
         if (!made.ok) return made;
         await t.rules.update(target.id, { status: "retired" });
         await recordApproval(target.id, "rule_replaced");
@@ -257,7 +259,6 @@ export function rulesService(db: Db, userId: string) {
       if (!choice.draft) return fail("invalid_input", "Merging needs the merged wording.");
       const edited = await editCore(id, choice.draft, now);
       if (!edited.ok) return edited;
-      if (choice.lock || target.status === "locked") await t.rules.update(edited.rule.id, { status: "locked" }).then(() => recordApproval(edited.rule.id, "rule_locked"));
       await t.rules.update(target.id, { status: "retired" });
       await recordApproval(target.id, "rule_replaced");
       return { ok: true, rule: (await load(edited.rule.id)) ?? edited.rule };
@@ -265,7 +266,7 @@ export function rulesService(db: Db, userId: string) {
 
     /**
      * The person edits a rule and approves the edit. This makes a NEW version (old one retired), so the
-     * version history stays visible (FR-E2). A locked rule stays locked.
+     * version history stays visible (FR-E2).
      */
     async editAndApprove(id: string, draft: RuleDraft, now = new Date()): Promise<RuleResult> {
       // An edit is an approval too, so it must not step around an unresolved contradiction (FR-E3).
@@ -277,16 +278,6 @@ export function rulesService(db: Db, userId: string) {
         }
       }
       return editCore(id, draft, now);
-    },
-
-    /** The person locks an active rule so it always wins (FR-E6). Only the person can do this; it is recorded. */
-    async lock(id: string): Promise<RuleResult> {
-      const rule = await load(id);
-      if (!rule) return fail("not_found", "No such rule.");
-      if (rule.status !== "active") return fail("wrong_state", "Only an active rule can be locked.");
-      const row = await t.rules.update(id, { status: "locked" });
-      await recordApproval(id, "rule_locked");
-      return { ok: true, rule: toRecord(row as Row) };
     },
 
     /**
@@ -334,10 +325,10 @@ export function rulesService(db: Db, userId: string) {
       return ((await t.rules.list()) as Row[]).map(toRecord);
     },
 
-    /** What an agent may see: active and locked rules for everyone or for this agent, in the fixed order. */
+    /** What an agent may see: active rules for everyone or for this agent, in the fixed order. */
     async servedTo(connectionId: string): Promise<RuleRecord[]> {
       const live = (await this.list()).filter(
-        (r) => (r.status === "active" || r.status === "locked") && (r.scope === "all" || r.scope === `agent:${connectionId}`),
+        (r) => r.status === "active" && (r.scope === "all" || r.scope === `agent:${connectionId}`),
       );
       return orderRules(live);
     },

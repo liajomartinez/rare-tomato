@@ -35,8 +35,8 @@ async function setup(label: string) {
   };
   const active = await mk("Never book before 10 am.");
   await rules.approve(active.id);
-  const locked = await mk("Ask before spending over $50.");
-  await rules.approve(locked.id, { lock: true });
+  const second = await mk("Ask before spending over $50.");
+  await rules.approve(second.id);
   await mk("A proposed rule nobody approved.");
   const retired = await mk("A retired rule.");
   await rules.approve(retired.id);
@@ -55,12 +55,13 @@ describe("the care sheet", () => {
     expect(sheet).toContain("tell me if you cannot follow one");
   });
 
-  it("lists active and locked rules (locked first), and no proposed, retired or agent-specific rule", async () => {
+  it("lists active rules (newest first), and no proposed, retired or agent-specific rule", async () => {
     const u = await setup("cs-rules");
     const sheet = await careSheet(db, masters, u.id, { categories: [], now: NOW });
-    expect(sheet).toContain("[locked] Ask before spending over $50.");
+    expect(sheet).toContain("Ask before spending over $50.");
     expect(sheet).toContain("Never book before 10 am.");
-    expect(sheet.indexOf("[locked]")).toBeLessThan(sheet.indexOf("Never book before 10 am."));
+    expect(sheet).not.toMatch(/locked/i);
+    expect(sheet.indexOf("Ask before spending over $50.")).toBeLessThan(sheet.indexOf("Never book before 10 am."));
     expect(sheet).not.toContain("proposed rule nobody approved");
     expect(sheet).not.toContain("retired rule");
     expect(sheet).not.toContain("Only for one agent");

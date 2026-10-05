@@ -16,7 +16,7 @@ export function overlapsFor(rule: RuleRecord, all: RuleRecord[]): Overlap[] {
   const out: Overlap[] = [];
   for (const res of rule.conflictCheck?.results ?? []) {
     const target = byId.get(res.ruleId);
-    if (!target || (target.status !== "active" && target.status !== "locked")) continue;
+    if (!target || target.status !== "active") continue;
     if (res.verdict === "independent") continue;
     out.push({ target, verdict: res.verdict });
   }
@@ -46,7 +46,7 @@ export function ConflictPanel({ rule, overlaps, resolve, scopeLabel }: { rule: R
           </p>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: "1rem" }}>
             <div>
-              <h4>Your rule now{target.status === "locked" ? " (locked)" : ""}</h4>
+              <h4>Your rule now</h4>
               <p style={{ whiteSpace: "pre-wrap" }}>{target.text}</p>
               <p style={muted}>
                 Applies to: {scopeLabel(target.scope)}. When: {target.when}
@@ -83,7 +83,6 @@ export function ConflictPanel({ rule, overlaps, resolve, scopeLabel }: { rule: R
                   </button>
                 </form>
               </details>
-              {target.status === "locked" ? <p style={muted}>Your existing rule is locked, so whatever replaces it stays locked.</p> : null}
             </div>
           ) : null}
         </div>

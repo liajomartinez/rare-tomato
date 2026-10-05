@@ -33,10 +33,10 @@ async function person(label: string) {
   return { user, t, svc: rulesService(db, user.id), conn: conn.id as string };
 }
 type P = Awaited<ReturnType<typeof person>>;
-const live = async (p: P, text: string, extra: { category?: string; scope?: string; lock?: boolean; when?: string } = {}) => {
+const live = async (p: P, text: string, extra: { category?: string; scope?: string; when?: string } = {}) => {
   const made = await p.svc.propose({ text, category: extra.category ?? "messaging", when: extra.when ?? "a buyer asks", because: "b", scope: extra.scope });
   if (!made.ok) throw new Error(made.message);
-  const ok = await p.svc.approve(made.rule.id, { lock: extra.lock });
+  const ok = await p.svc.approve(made.rule.id);
   if (!ok.ok) throw new Error(ok.message);
   return ok.rule;
 };
@@ -76,10 +76,9 @@ describe("the candidate set (spec 6.3 step 1)", () => {
       r({ id: "d", category: "booking" }), // other category
       r({ id: "e", status: "retired" }),
       r({ id: "f", status: "proposed" }),
-      r({ id: "g", status: "locked" }),
       proposed,
     ]);
-    expect(out.map((x) => x.id).sort()).toEqual(["a", "b", "g"]);
+    expect(out.map((x) => x.id).sort()).toEqual(["a", "b"]);
   });
 
   it("never asks the model about more than the cap", () => {
@@ -143,27 +142,19 @@ describe("checking a proposed rule against the live rules", () => {
     expect(events).toEqual(expect.arrayContaining(["rule_approved", "rule_replaced"]));
   });
 
-  it("replacing a LOCKED rule keeps the result locked, so a proposal cannot quietly weaken a locked rule", async () => {
-    const p = await person("replace-locked");
-    const old = await live(p, "Never agree to a price", { lock: true });
-    const prop = await proposal(p, "You may agree to a price up to ten dollars off");
-    await checkConflicts(db, p.user.id, prop.id, fake("contradicts").client);
-    const r = await p.svc.resolveConflict(prop.id, { kind: "replace", targetId: old.id });
-    expect(r.ok && r.rule.status).toBe("locked");
-  });
-
-  it("keep both: both stay live, each lists the other in conflicts_with for agents, and locked still ranks first", async () => {
+  it("keep both: both stay live, each lists the other in conflicts_with for agents, and the newer one ranks first", async () => {
     const p = await person("both");
-    const old = await live(p, "Always tell buyers my price is firm", { lock: true });
+    const old = await live(p, "Always tell buyers my price is firm");
     const prop = await proposal(p, "Offer buyers a small discount if they ask");
     await checkConflicts(db, p.user.id, prop.id, fake("contradicts").client);
     const r = await p.svc.resolveConflict(prop.id, { kind: "keep_both", targetId: old.id });
     expect(r.ok).toBe(true);
     const served = await makeServices(db, masters).rules(p.user.id, p.conn);
-    expect(served.map((x) => x.id)).toEqual([old.id, prop.id]);
-    expect(served[0].conflicts_with).toEqual([prop.id]);
-    expect(served[1].conflicts_with).toEqual([old.id]);
-    expect(served[0].locked).toBe(true);
+    // Same condition, so the newer rule comes first (there is no locked rule that outranks it any more).
+    expect(served.map((x) => x.id)).toEqual([prop.id, old.id]);
+    expect(served[0].conflicts_with).toEqual([old.id]);
+    expect(served[1].conflicts_with).toEqual([prop.id]);
+    expect("locked" in served[0]).toBe(false);
   });
 
   it("merge: the person's merged wording takes the old rule's place", async () => {

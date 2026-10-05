@@ -9,6 +9,8 @@ import {
 export const agentType = pgEnum("agent_type", ["claude", "chatgpt", "muse", "grok", "other"]);
 export const factCategory = pgEnum("fact_category", ["preferences", "contacts", "family"]);
 export const factSource = pgEnum("fact_source", ["manual", "import", "correction"]);
+// "locked" is no longer used anywhere in the code (owner decision, 2026-10-04): migration 0010 turned every locked rule into an active one.
+// The value stays in the database enum because Postgres cannot drop an enum value easily; it is kept here so this file matches the database.
 export const ruleStatus = pgEnum("rule_status", ["proposed", "active", "locked", "retired"]);
 export const verdict = pgEnum("verdict", ["followed", "violated", "not_applicable", "uncertain"]);
 export const scorer = pgEnum("scorer", ["jev", "claude", "user"]);

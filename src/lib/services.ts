@@ -18,7 +18,7 @@ export function makeServices(db: Db, masters: MasterKeys, model?: ModelClient, o
       return facts.map<FactView>((f) => ({ id: f.id, category: f.category, key: f.key, value: f.value, updatedAt: f.updatedAt }));
     },
 
-    // Only approved rules (active or locked), in the fixed order of spec 6.4. Proposed rules are never served.
+    // Only approved rules (active), in the fixed order of spec 6.4. Proposed rules are never served.
     async rules(userId, connectionId) {
       const rules = await rulesService(db, userId).servedTo(connectionId);
       // Overlaps the person chose to keep ("keep both"), shown from both sides so an agent can see the tie-break (spec 6.4).
@@ -32,7 +32,6 @@ export function makeServices(db: Db, masters: MasterKeys, model?: ModelClient, o
         category: r.category,
         scope: r.scope,
         precedence_rank: i + 1,
-        locked: r.status === "locked",
         conflicts_with: overlaps(r.id),
         version: r.version,
       }));

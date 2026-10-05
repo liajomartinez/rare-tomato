@@ -537,11 +537,11 @@ describe("agents record what they did (log_task, FR-C1)", () => {
 // ---- get_rules and the category filter (PLANNED, option B: the filter is advisory; see the project notes)
 // These tests are written BEFORE the change and are expected to fail until it is built.
 describe("get_rules: the category argument never hides a rule (option B)", () => {
-  type Served = { id: string; text: string; category: string; scope: string; precedence_rank: number; locked: boolean; conflicts_with: string[]; version: number; matches_requested_category?: boolean };
+  type Served = { id: string; text: string; category: string; scope: string; precedence_rank: number; conflicts_with: string[]; version: number; matches_requested_category?: boolean };
   const DESCRIPTION_TODAY =
     "Returns the rules the person has approved for how you should act for them, in order of precedence. Check them before you book, message, buy or otherwise act on their behalf, and take them into account. Rules are advice from the person: nothing forces you to follow them, and the person is relying on you to.";
 
-  async function withRules(rules: { text: string; category: string; when?: string; lock?: boolean; scope?: string }[]) {
+  async function withRules(rules: { text: string; category: string; when?: string; scope?: string }[]) {
     const p = await person();
     const conn = await confirmed(p.sub, p.t);
     const svc = rulesService(db, p.user.id);
@@ -549,7 +549,7 @@ describe("get_rules: the category argument never hides a rule (option B)", () =>
     for (const r of rules) {
       const made = await svc.propose({ text: r.text, category: r.category, when: r.when ?? "x", because: "b", scope: r.scope });
       if (!made.ok) throw new Error(made.message);
-      await svc.approve(made.rule.id, { lock: r.lock });
+      await svc.approve(made.rule.id);
       ids.push(made.rule.id);
     }
     return { p, conn, svc, ids };
@@ -559,32 +559,32 @@ describe("get_rules: the category argument never hides a rule (option B)", () =>
     return JSON.parse(body.result.content[0].text) as { rules_version: string; rules: Served[]; note?: string };
   };
 
-  it("a locked rule is returned when the agent asks for a different category, and is marked as not matching", async () => {
-    const { p } = await withRules([{ text: "Ask me before agreeing a price", category: "messaging", lock: true }]);
+  it("a rule is returned when the agent asks for a different category, and is marked as not matching", async () => {
+    const { p } = await withRules([{ text: "Ask me before agreeing a price", category: "messaging" }]);
     const out = await get(p.sub, { category: "purchasing" });
     expect(out.rules).toHaveLength(1);
-    expect(out.rules[0].locked).toBe(true);
+    expect("locked" in out.rules[0]).toBe(false);
     expect(out.rules[0].matches_requested_category).toBe(false);
   });
 
-  it("the marketplace case: a locked messaging rule reaches an agent that asks for 'selling'", async () => {
-    const { p } = await withRules([{ text: "Never agree a price or time", category: "messaging", lock: true }]);
+  it("the marketplace case: a messaging rule reaches an agent that asks for 'selling'", async () => {
+    const { p } = await withRules([{ text: "Never agree a price or time", category: "messaging" }]);
     const out = await get(p.sub, { category: "selling" });
     expect(out.rules.map((r) => r.text)).toEqual(["Never agree a price or time"]);
   });
 
   it("puts matching rules first and flags them, but keeps the precedence rank from spec 6.4 unchanged", async () => {
     const { p } = await withRules([
-      { text: "locked booking rule", category: "booking", lock: true },
+      { text: "booking rule", category: "booking", when: "a much longer and narrower condition than the other one" },
       { text: "plain messaging rule", category: "messaging" },
     ]);
     const unfiltered = await get(p.sub);
     const filtered = await get(p.sub, { category: "messaging" });
-    expect(filtered.rules.map((r) => r.text)).toEqual(["plain messaging rule", "locked booking rule"]);
+    expect(filtered.rules.map((r) => r.text)).toEqual(["plain messaging rule", "booking rule"]);
     expect(filtered.rules.map((r) => r.matches_requested_category)).toEqual([true, false]);
     const rank = (o: typeof unfiltered) => Object.fromEntries(o.rules.map((r) => [r.text, r.precedence_rank]));
-    expect(rank(filtered)).toEqual(rank(unfiltered)); // the locked rule still ranks first in precedence
-    expect(rank(unfiltered)["locked booking rule"]).toBe(1);
+    expect(rank(filtered)).toEqual(rank(unfiltered)); // the narrower rule still ranks first in precedence
+    expect(rank(unfiltered)["booking rule"]).toBe(1);
   });
 
   it("an unknown category returns every rule, none marked as matching, with a note listing the valid categories", async () => {
@@ -604,7 +604,7 @@ describe("get_rules: the category argument never hides a rule (option B)", () =>
   });
 
   it("with no category, every rule is returned in the usual order, and the flag is left out of every rule", async () => {
-    const { p } = await withRules([{ text: "a", category: "messaging" }, { text: "b", category: "booking", lock: true }]);
+    const { p } = await withRules([{ text: "a", category: "messaging" }, { text: "b", category: "booking", when: "a much longer and narrower condition than the other one" }]);
     const out = await get(p.sub);
     expect(out.rules.map((r) => r.text)).toEqual(["b", "a"]);
     for (const r of out.rules) expect("matches_requested_category" in r).toBe(false);
@@ -665,7 +665,7 @@ describe("get_rules: the category argument never hides a rule (option B)", () =>
     const { p } = await withRules([{ text: "a", category: "messaging" }]);
     const out = await get(p.sub, { category: "booking" });
     expect(Object.keys(out.rules[0]).sort()).toEqual(
-      ["category", "conflicts_with", "id", "locked", "matches_requested_category", "precedence_rank", "scope", "text", "version"].sort(),
+      ["category", "conflicts_with", "id", "matches_requested_category", "precedence_rank", "scope", "text", "version"].sort(),
     );
     const rows = ((await p.t.auditLog.list()) as { action: string; categoriesRead: string[] }[]).filter((r) => r.action === "get_rules");
     expect(rows).toHaveLength(1);

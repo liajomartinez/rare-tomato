@@ -34,7 +34,6 @@ export interface RuleView {
   category: string;
   scope: string;
   precedence_rank: number;
-  locked: boolean;
   conflicts_with: string[];
   version: number;
 }
@@ -212,7 +211,7 @@ const getRules: ToolDef = {
             // The category never hides a rule: everything is returned, with the best matches first and flagged (spec 7.3).
             const { rules, note } = arrangeRules(all, category);
             await services.audit({ userId: caller.userId, connectionId: caller.connectionId, action: "get_rules", categoriesRead: [] });
-            return asText({ rules_version: shortHash(all.map((r) => `${r.id}:${r.version}:${r.locked ? "L" : "A"}`)), ...(note ? { note } : {}), rules });
+            return asText({ rules_version: shortHash(all.map((r) => `${r.id}:${r.version}`)), ...(note ? { note } : {}), rules });
           } catch (error) {
             logSafeError(error, "mcp");
             return failure();

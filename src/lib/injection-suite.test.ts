@@ -137,7 +137,7 @@ describe.each(payloads)("payload $id ($kind)", (p) => {
     const m = gullible();
     const out = await ruleWriter(db, masters, w.user.id, m.client).proposeFromFeedback(fb.feedback.id);
     expect(out.kind).not.toBe("proposed");
-    const live = (await rulesService(db, w.user.id).list()).filter((r) => r.status === "active" || r.status === "locked");
+    const live = (await rulesService(db, w.user.id).list()).filter((r) => r.status === "active");
     expect(live.map((r) => r.text)).toEqual(["Never book appointments before 10 am."]);
     for (const req of m.requests) {
       expect(req.system).not.toContain(p.value.slice(0, 40));

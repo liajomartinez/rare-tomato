@@ -71,6 +71,13 @@
       "when": 1791068105744,
       "tag": "0009_users_terms_acceptance",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1791162912039,
+      "tag": "0010_locked_rules_become_active",
+      "breakpoints": true
     }
   ]
 }

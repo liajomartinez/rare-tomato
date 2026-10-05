@@ -297,7 +297,7 @@ it("runs one phase of the marketplace eval", async () => {
   }
 
   if (phase === "before") {
-    if ((await rules.list()).some((r) => r.status === "active" || r.status === "locked")) throw new Error("BEFORE needs an empty rule set.");
+    if ((await rules.list()).some((r) => r.status === "active")) throw new Error("BEFORE needs an empty rule set.");
     await runAll("BEFORE");
     return;
   }
@@ -331,10 +331,10 @@ it("runs one phase of the marketplace eval", async () => {
 
   if (phase === "after") {
     const tap = readJson(path.join(RESULTS, "marketplace-tap.json")) as { feedbackId: string };
-    const live = (await rules.list()).filter((r) => r.status === "active" || r.status === "locked");
-    if (live.length !== 1 || live[0].status !== "locked" || live[0].sourceFeedbackId !== tap.feedbackId) throw new Error("AFTER needs exactly one locked rule, made from Lia's feedback.");
+    const live = (await rules.list()).filter((r) => r.status === "active");
+    if (live.length !== 1 || live[0].status !== "active" || live[0].sourceFeedbackId !== tap.feedbackId) throw new Error("AFTER needs exactly one active rule, made from Lia's feedback.");
     const audit = await her.t.auditLog.list();
-    if (!audit.some((a) => a.actor === "user" && a.action === `rule_locked:${live[0].id}`)) throw new Error("No approval event from the person for this rule.");
+    if (!audit.some((a) => a.actor === "user" && a.action === `rule_approved:${live[0].id}`)) throw new Error("No approval event from the person for this rule.");
     await runAll("AFTER");
     return;
   }
@@ -360,22 +360,22 @@ it("runs one phase of the marketplace eval", async () => {
   }
 
   if (phase === "followup") {
-    // Clearly labeled follow-up (Lia, 2026-09-30): AFTER for S1 and S2 only, same locked rule, tool arguments logged.
+    // Clearly labeled follow-up (Lia, 2026-09-30): AFTER for S1 and S2 only, same active rule, tool arguments logged.
     // The original AFTER runs are left untouched, and these are never merged into the primary counts.
     const tap = readJson(path.join(RESULTS, "marketplace-tap.json")) as { feedbackId: string };
-    const live = (await rules.list()).filter((r) => r.status === "active" || r.status === "locked");
-    if (live.length !== 1 || live[0].status !== "locked" || live[0].sourceFeedbackId !== tap.feedbackId) throw new Error("Follow-up needs the same single locked rule.");
+    const live = (await rules.list()).filter((r) => r.status === "active");
+    if (live.length !== 1 || live[0].status !== "active" || live[0].sourceFeedbackId !== tap.feedbackId) throw new Error("Follow-up needs the same single active rule.");
     await runAll("AFTER (follow-up)", { only: ["S1", "S2"], name: "after-followup" });
     return;
   }
 
   if (phase === "rerun") {
     // SECOND AFTER (Lia, 2026-09-30): S1 and S2 only, after get_rules was made advisory (every rule returned whatever the category).
-    // Same system prompt, model, settings and locked rule as the original AFTER; tool arguments logged. Kept in its own file and never
+    // Same system prompt, model, settings and active rule as the original AFTER; tool arguments logged. Kept in its own file and never
     // merged into the original AFTER or the first follow-up.
     const tap = readJson(path.join(RESULTS, "marketplace-tap.json")) as { feedbackId: string };
-    const live = (await rules.list()).filter((r) => r.status === "active" || r.status === "locked");
-    if (live.length !== 1 || live[0].status !== "locked" || live[0].sourceFeedbackId !== tap.feedbackId) throw new Error("Re-run needs the same single locked rule.");
+    const live = (await rules.list()).filter((r) => r.status === "active");
+    if (live.length !== 1 || live[0].status !== "active" || live[0].sourceFeedbackId !== tap.feedbackId) throw new Error("Re-run needs the same single active rule.");
     await runAll("AFTER (second AFTER, advisory get_rules)", { only: ["S1", "S2"], name: "after-second-advisory" });
     return;
   }

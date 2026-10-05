@@ -6,7 +6,7 @@ import { logSafeError } from "./safe-log";
 
 // Conflict detection (spec 6.3, FR-E3). Before a proposed rule can be approved it is compared with the person's live
 // rules. This only INFORMS the person: nothing here activates, retires or changes a rule. The person decides.
-//   1. Candidates: active or locked rules in the same category whose agent scope overlaps.
+//   1. Candidates: active rules in the same category whose agent scope overlaps.
 //   2. A cheap word-similarity check flags near-identical rules as `duplicate`, with no model call.
 //   3. Claude Haiku compares the new rule with each remaining candidate: duplicate, contradicts, refines or independent.
 // Rule text is passed to the model as quoted data, and any answer that is not one of the four words counts as `unchecked`,
@@ -50,8 +50,8 @@ export const scopesOverlap = (a: string, b: string) => a === "all" || b === "all
 
 export function candidatesFor(proposed: RuleRecord, all: RuleRecord[]): RuleRecord[] {
   return all
-    .filter((r) => r.id !== proposed.id && (r.status === "active" || r.status === "locked") && r.category === proposed.category && scopesOverlap(r.scope, proposed.scope))
-    .sort((a, b) => Number(b.status === "locked") - Number(a.status === "locked") || b.createdAt.getTime() - a.createdAt.getTime())
+    .filter((r) => r.id !== proposed.id && r.status === "active" && r.category === proposed.category && scopesOverlap(r.scope, proposed.scope))
+    .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
     .slice(0, MAX_CANDIDATES);
 }
 

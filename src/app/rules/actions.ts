@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { dataFor, rulesFor } from "@/db/production";
 import { requireReady } from "@/lib/session";
-import { NOT_NOW_BANNER, SAVED_AS_RULE_AND_LOCKED_BANNER, SAVED_AS_RULE_BANNER } from "@/lib/strings";
+import { NOT_NOW_BANNER, SAVED_AS_RULE_BANNER } from "@/lib/strings";
 
 // The person's id always comes from their sign-in, never from the form. Every change below is made by the person,
 // on purpose, and is recorded as their approval. Nothing here runs without a tap from them (spec FR-E5).
@@ -18,11 +18,10 @@ const done = (message: string, savedId?: string): never => {
 
 export async function approveRule(formData: FormData) {
   const person = await requireReady();
-  const lock = formData.get("lock") === "yes";
-  const result = await rulesFor(person.id).approve(text(formData, "id"), { lock });
   const id = text(formData, "id");
+  const result = await rulesFor(person.id).approve(id);
   if (!result.ok) done(result.message);
-  done(lock ? SAVED_AS_RULE_AND_LOCKED_BANNER : SAVED_AS_RULE_BANNER, id);
+  done(SAVED_AS_RULE_BANNER, id);
 }
 
 /** "Not now": the proposed rule is deleted for good. It is not kept as pending or as history, and no agent ever saw it (run 7). */
@@ -30,12 +29,6 @@ export async function discardDraft(formData: FormData) {
   const person = await requireReady();
   const result = await rulesFor(person.id).discard(text(formData, "id"));
   done(result.ok ? NOT_NOW_BANNER : result.message);
-}
-
-export async function lockRule(formData: FormData) {
-  const person = await requireReady();
-  const result = await rulesFor(person.id).lock(text(formData, "id"));
-  done(result.ok ? "Locked. It now comes first." : result.message);
 }
 
 export async function retireRule(formData: FormData) {

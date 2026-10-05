@@ -13,7 +13,7 @@ const noop = () => undefined;
 const scopeLabel = (s: string) => (s === "all" ? "all your agents" : "one agent");
 
 describe("overlaps shown on a proposal", () => {
-  const existing = rule({ id: "old", text: "Always say the price is firm", status: "locked" });
+  const existing = rule({ id: "old", text: "Always say the price is firm" });
   const proposal = rule({
     id: "new", status: "proposed", text: "Offer a small discount if asked",
     conflictCheck: { checkedAt: "x", promptVersion: "v", results: [{ ruleId: "old", verdict: "contradicts" }, { ruleId: "gone", verdict: "duplicate" }, { ruleId: "same", verdict: "independent" }] },
@@ -29,12 +29,12 @@ describe("overlaps shown on a proposal", () => {
     const html = renderToStaticMarkup(createElement(ConflictPanel, { rule: proposal, overlaps: overlapsFor(proposal, [existing]), resolve: noop, scopeLabel }));
     expect(html).toContain("Always say the price is firm");
     expect(html).toContain("Offer a small discount if asked");
-    expect(html).toContain("Your rule now (locked)");
+    expect(html).toContain("Your rule now");
+    expect(html).not.toMatch(/locked/i);
     expect(html).toContain("contradicts one of your rules");
     expect(html).toContain("Replace my rule with the proposed one");
     expect(html).toContain("Keep both");
     expect(html).toContain("Merge into one rule");
-    expect(html).toContain("stays locked");
   });
 
   it("when the check could not be done, says so and offers no automatic choices", () => {

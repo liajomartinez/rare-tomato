@@ -26,9 +26,9 @@ export async function careSheet(db: Db, masters: MasterKeys, userId: string, opt
     wanted.length ? profileService(db, masters, userId).list(wanted) : Promise.resolve([]),
   ]);
 
-  // Rules for all agents only: a sheet is not tied to one agent. Locked first, then newest first.
-  const live = rules.filter((r) => (r.status === "active" || r.status === "locked") && r.scope === "all");
-  const ordered = [...live].sort((a, b) => Number(b.status === "locked") - Number(a.status === "locked") || b.createdAt.getTime() - a.createdAt.getTime());
+  // Rules for all agents only: a sheet is not tied to one agent. Newest first.
+  const live = rules.filter((r) => r.status === "active" && r.scope === "all");
+  const ordered = [...live].sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
 
   const lines: string[] = [];
   lines.push(`# My ${CARE_SHEET_NAME_LOWER} (made ${now.toISOString().slice(0, 10)})`);
@@ -42,7 +42,7 @@ export async function careSheet(db: Db, masters: MasterKeys, userId: string, opt
   lines.push("## My rules");
   if (ordered.length === 0) lines.push("(No rules yet.)");
   for (const r of ordered) {
-    lines.push(`- ${r.status === "locked" ? "[locked] " : ""}${oneLine(r.text)} (applies when: ${oneLine(r.when)})`);
+    lines.push(`- ${oneLine(r.text)} (applies when: ${oneLine(r.when)})`);
   }
   for (const category of wanted) {
     // A detail the person limited to chosen agents never goes on the sheet: the sheet is pasted into an agent we cannot name.
