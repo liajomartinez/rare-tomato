@@ -72,7 +72,7 @@ export function feedbackService(db: Db, masters: MasterKeys, userId: string) {
      * the old one is kept. Reasons and a note only belong with a 👎 (a 👍 keeps neither).
      */
     async submit(input: FeedbackInput): Promise<FeedbackResult> {
-      if (!(RATINGS as readonly string[]).includes(input.rating as string)) return bad("Choose a thumbs up or a thumbs down.");
+      if (!(RATINGS as readonly string[]).includes(input.rating as string)) return bad("Choose Good or Not right.");
       if (typeof input.taskId !== "string") return bad("Missing task.");
       const rating = input.rating as Rating;
 

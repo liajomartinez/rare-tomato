@@ -41,7 +41,9 @@ export function ScoreCard({ agentName, percent, reportedTasks, paused, needsAnsw
         <div className="stack stack-1">
           {learning ? (
             <>
-              <Tag strong>{S.score.learning}</Tag>
+              <div>
+                <Tag strong>{S.score.learning}</Tag>
+              </div>
               <span className="caption">{S.score.need(reportedTasks)}</span>
             </>
           ) : (

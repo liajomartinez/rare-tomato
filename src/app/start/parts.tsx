@@ -53,7 +53,7 @@ export function BackLink({ href }: { href: string }) {
   return (
     <div>
       <Link href={href} prefetch={false} className="btn btn-quiet pull-left">
-        {S.onb.back}
+        {"←"} {S.onb.back}
       </Link>
     </div>
   );

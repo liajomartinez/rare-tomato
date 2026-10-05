@@ -142,7 +142,7 @@ describe("the rule writer (spec 6.1)", () => {
       expect(m.calls[0].user).toContain("The person wrote no words of their own");
       expect(m.calls[0].user).toContain("Shouldn");
       expect(r.rule.scope).toBe("all");
-      expect(r.rule.because).toMatch(/^You gave a thumbs down and chose: .*Shouldn't have done this/);
+      expect(r.rule.because).toMatch(/^You marked it Not right and chose: .*Shouldn't have done this/);
       expect(r.rule.because).not.toContain("made up");
       expect(r.rule.status).toBe("proposed");
       expect(await makeServices(db, masters).rules(p.user.id, p.conn)).toHaveLength(0);

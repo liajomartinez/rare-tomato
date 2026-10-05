@@ -193,7 +193,7 @@ export function ruleWriter(db: Db, masters: MasterKeys, userId: string, model: M
       const text = String(out.text ?? "");
       const when = String(out.when ?? "");
       // With no words from the person, the reason shown is ours, not the model's: it says exactly what the person chose.
-      const because = noWords ? `You gave a thumbs down and chose: ${labels.join("; ")}.` : String(out.because ?? "");
+      const because = noWords ? `You marked it Not right and chose: ${labels.join("; ")}.` : String(out.because ?? "");
       const doText = typeof out.do === "string" ? out.do : null;
       const dontText = typeof out.dont === "string" ? out.dont : null;
       const strength = (STRENGTHS as readonly string[]).includes(out.strength as string) ? (out.strength as string) : "prefer";

@@ -70,7 +70,7 @@ export default function Privacy() {
           </tr>
           <tr>
             <td style={td}>Your feedback on a task</td>
-            <td style={td}>The note is encrypted at the field level. The thumbs up or down and the reasons you chose are not.</td>
+            <td style={td}>The note is encrypted at the field level. Good or Not right, and the reasons you chose, are not.</td>
           </tr>
           <tr>
             <td style={td}>Your rules and their history</td>
@@ -79,7 +79,7 @@ export default function Privacy() {
           <tr>
             <td style={td}>Generated rule drafts</td>
             <td style={td}>
-              After a thumbs-down we draft a rule. It is kept, not field-encrypted and never shown to any agent, until you save it, tap Not now (which deletes it), or about 30
+              After you choose Draft a rule on a Not right task we draft a rule. It is kept, not field-encrypted and never shown to any agent, until you save it, choose Discard (which deletes it), or about 30
               minutes pass (it is then deleted).
             </td>
           </tr>
@@ -174,7 +174,7 @@ export default function Privacy() {
 </div>
       <p>We have not confirmed written data-processing terms with each provider.</p>
       <p>
-        <strong>What goes to Anthropic, exactly.</strong> (a) <em>Rule draft</em>, after a thumbs-down: the reasons you chose, your note if you wrote one, the task summary, the
+        <strong>What goes to Anthropic, exactly.</strong> (a) <em>Rule draft</em>, after you choose Draft a rule on a Not right task: the reasons you chose, your note if you wrote one, the task summary, the
         task&apos;s kind, and the wording of up to ten of your approved rules in that kind. (b) <em>Overlap check</em>, when a proposed rule may overlap one of yours: the wording
         and the &quot;when it applies&quot; line of both rules, not redacted. (c) <em>Scoring</em>: the task summary and the rule wording after we replace names, emails, phone
         numbers, addresses and birth dates with placeholders. That replacement is best-effort and can miss a name. We do not send your saved details to Anthropic directly,
