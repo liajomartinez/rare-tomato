@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import { currentSession } from "@/lib/session";
 import { AccountForm } from "./AccountForm";
 import { Head, Narrow, Progress } from "../parts";
-import { S } from "@/lib/strings";
+import { S, SIGN_UP_BODY } from "@/lib/strings";
 
 export const dynamic = "force-dynamic";
 
@@ -14,7 +14,7 @@ export default async function CreateAccount() {
   return (
     <Narrow>
       <Progress n={1} />
-      <Head title={S.onb.signup.title} body={S.onb.signup.body} />
+      <Head title={S.onb.signup.title} body={SIGN_UP_BODY} />
       <AccountForm />
     </Narrow>
   );

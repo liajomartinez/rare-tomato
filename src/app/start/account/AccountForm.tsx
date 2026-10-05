@@ -2,31 +2,34 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { S } from "@/lib/strings";
+import { S, SIGN_UP_CONTINUE } from "@/lib/strings";
+import { agreeAndSignIn } from "../actions";
 
-// The tick turns the button on. Nothing is stored here: the account is made on the hosted sign-in page, and the tick is recorded after it.
+// One checkbox: "I am 18 or older and agree to the Terms and Privacy Notice." (owner decision 6). The button stays off until it is ticked. The tick is
+// recorded, with the time, right after sign-in (see src/lib/terms-cookie.ts). The account itself is made on the hosted sign-in page.
 export function AccountForm() {
   const G = S.onb.signup;
-  const [adult, setAdult] = useState(false);
+  const [agreed, setAgreed] = useState(false);
   return (
-    <div className="stack stack-5">
+    <form action={agreeAndSignIn} className="stack stack-5">
       <label className="check-row">
-        <input type="checkbox" checked={adult} onChange={(e) => setAdult(e.target.checked)} />
-        <span className="stack stack-1">
-          <span className="check-text">{G.adult}</span>
-          <span className="caption">{G.adultNote}</span>
+        <input type="checkbox" name="accept" checked={agreed} onChange={(e) => setAgreed(e.target.checked)} />
+        <span className="check-text">
+          {G.agree[0]}
+          <Link href="/terms" target="_blank" rel="noopener" prefetch={false} className="strong-link">
+            {G.terms}
+          </Link>
+          {G.agree[1]}
+          <Link href="/privacy" target="_blank" rel="noopener" prefetch={false} className="strong-link">
+            {G.privacy}
+          </Link>
+          {G.agree[2]}
         </span>
       </label>
       <div className="stack stack-1">
-        {adult ? (
-          <a className="btn btn-primary btn-block" href="/sign-in">
-            {G.send}
-          </a>
-        ) : (
-          <button type="button" className="btn-primary btn-block" disabled>
-            {G.send}
-          </button>
-        )}
+        <button type="submit" className="btn-primary btn-block" disabled={!agreed}>
+          {SIGN_UP_CONTINUE}
+        </button>
         <p className="caption" style={{ textAlign: "center", display: "flex", justifyContent: "center", alignItems: "center", gap: "var(--space-1)", flexWrap: "wrap" }}>
           {G.have}{" "}
           <Link href="/sign-in" prefetch={false} className="btn btn-quiet">
@@ -34,6 +37,6 @@ export function AccountForm() {
           </Link>
         </p>
       </div>
-    </div>
+    </form>
   );
 }

@@ -4,18 +4,36 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { FLOW_COOKIE_DAYS, LATER_COOKIE, PICKED_COOKIE, parsePicked } from "@/lib/onboarding-flow";
 import { requireReady } from "@/lib/session";
+import { TERMS_VERSION } from "@/lib/strings";
+import { TERMS_COOKIE, TERMS_COOKIE_SECONDS } from "@/lib/terms-cookie";
 
 // Only two small cookies are written here (which agents were picked, and "Do this later"). The person's id never comes from the form.
 
 const maxAge = FLOW_COOKIE_DAYS * 24 * 60 * 60;
 
-/** "Continue" on Which agents do you use. At least one is required; the first goes straight to its setup step. */
+/**
+ * "Continue" on Create your account. The box must be ticked (the button is off until it is, and this checks again on the server). The tick is kept in one
+ * short-lived cookie so the sign-in return can record it, with the time, on the new account (see src/lib/terms-cookie.ts). Then the hosted sign-in page.
+ */
+export async function agreeAndSignIn(formData: FormData) {
+  if (formData.get("accept") !== "on") redirect("/start/account");
+  const jar = await cookies();
+  jar.set(TERMS_COOKIE, TERMS_VERSION, { maxAge: TERMS_COOKIE_SECONDS, path: "/", httpOnly: true, sameSite: "lax", secure: true });
+  redirect("/sign-in");
+}
+
+/**
+ * "Continue" on Which agent do you want to connect first. One agent is required and goes straight to its setup. Agents picked earlier stay remembered
+ * (so Home can list them as "Not connected yet"); nothing else about onboarding is stored on the server.
+ */
 export async function savePicks(formData: FormData) {
   await requireReady();
-  const picked = parsePicked(formData.getAll("agent").map(String).join(","));
+  const picked = parsePicked(formData.getAll("agent").map(String).slice(0, 1).join(","));
   if (picked.length === 0) redirect("/start/agents");
   const jar = await cookies();
-  jar.set(PICKED_COOKIE, picked.map((a) => a.key).join(","), { maxAge, path: "/", httpOnly: true, sameSite: "lax", secure: true });
+  const before = parsePicked(jar.get(PICKED_COOKIE)?.value).map((a) => a.key);
+  const all = [...new Set([...before, picked[0].key])];
+  jar.set(PICKED_COOKIE, all.join(","), { maxAge, path: "/", httpOnly: true, sameSite: "lax", secure: true });
   jar.delete(LATER_COOKIE);
   redirect(`/start/setup?agent=${picked[0].key}`);
 }

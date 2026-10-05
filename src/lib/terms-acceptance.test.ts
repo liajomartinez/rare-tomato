@@ -9,7 +9,7 @@ import { createTestDb } from "@/db/testing";
 import { masterKeysFromEnv } from "./crypto";
 import { exportAll } from "./data-export";
 import { acceptTerms, findOrCreateUser, needsTermsStep } from "./identity";
-import { ACCEPT_LABEL, CONTACT_LINE, OPERATOR_LINE, OTHER_PEOPLE_STATEMENT, PRIVACY_NOTICE_NOTICE, SCORE_ORIGIN, TERMS_EFFECTIVE_DATE, TERMS_VERSION } from "./strings";
+import { ACCEPT_LABEL, CONTACT_LINE, OPERATOR_LINE, OTHER_PEOPLE_STATEMENT, S, SCORE_ORIGIN, TERMS_EFFECTIVE_DATE, TERMS_VERSION } from "./strings";
 
 // The "One quick thing" step records which Terms version a person accepted, and when. Everyone accepts the CURRENT version once.
 
@@ -63,16 +63,16 @@ describe("the One quick thing step", () => {
   const page = read("src/app/welcome/page.tsx");
   const action = read("src/app/welcome/actions.ts");
 
-  it("has one clear unchecked box with the agreed words, a plain Privacy Notice line above it, and a link to the Terms", () => {
-    expect(ACCEPT_LABEL).toBe("I am 18 or older and agree to the Terms");
-    expect(PRIVACY_NOTICE_NOTICE).toBe("Read how Rare Tomato handles your information in the Privacy Notice.");
-    expect(page).toContain("{ACCEPT_LABEL}");
+  it("has one clear unchecked box with the agreed words, and both names are links (owner decision 6, 2026-10-04)", () => {
+    expect(ACCEPT_LABEL).toBe("I am 18 or older and agree to the Terms and Privacy Notice.");
+    expect(S.onb.signup.agree[0] + S.onb.signup.terms + S.onb.signup.agree[1] + S.onb.signup.privacy + S.onb.signup.agree[2]).toBe(ACCEPT_LABEL);
+    expect(page).toContain("G.agree[0]");
     expect(page).toContain('name="accept"');
     expect(page).not.toMatch(/defaultChecked|checked=/);
-    expect(page.match(/type="checkbox"/g)).toHaveLength(1); // the Privacy Notice line is a notice, not a second consent box
-    expect(page.indexOf("PRIVACY_NOTICE_NOTICE")).toBeLessThan(page.indexOf('type="checkbox"'));
+    expect(page.match(/type="checkbox"/g)).toHaveLength(1); // one box only
     expect(page).toContain('href="/privacy"');
     expect(page).toContain('href="/terms"');
+    expect(page).not.toContain("PRIVACY_NOTICE_NOTICE");
   });
 
   it("will not continue unless the box is ticked, and records the version the server is running, not one sent by the form", () => {

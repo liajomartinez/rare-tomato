@@ -1,7 +1,10 @@
 import { withAuth } from "@workos-inc/authkit-nextjs";
+import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
-import { personForSignIn } from "@/db/production";
+import { acceptTermsFor, personForSignIn } from "@/db/production";
 import { AccountDeleted, needsTermsStep, SignupsClosed, type User } from "./identity";
+import { TERMS_VERSION } from "./strings";
+import { TERMS_COOKIE } from "./terms-cookie";
 
 export const signInConfigured = () =>
   Boolean(process.env.WORKOS_COOKIE_PASSWORD && process.env.NEXT_PUBLIC_WORKOS_REDIRECT_URI && process.env.WORKOS_API_KEY && process.env.WORKOS_CLIENT_ID);
@@ -26,7 +29,9 @@ export async function currentSession(): Promise<Session> {
     if (e instanceof AccountDeleted) return { status: "signed_out" }; // an old session after deletion: a fresh sign-in is needed
     throw e;
   }
-  // Anyone who has not accepted the CURRENT Terms (and confirmed they are an adult) sees the "One quick thing" step before anything else.
+  // The box on Create your account was ticked before sign-in, so the acceptance is recorded now, on the account, with the time. Only the version that
+  // is current counts. Anyone else who has not accepted the CURRENT Terms (and confirmed they are an adult) sees the "One quick thing" step first.
+  if (needsTermsStep(person) && (await cookies()).get(TERMS_COOKIE)?.value === TERMS_VERSION) person = await acceptTermsFor(person.id);
   return needsTermsStep(person) ? { status: "needs_attestation", person } : { status: "ready", person };
 }
 
