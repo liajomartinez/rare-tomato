@@ -252,7 +252,7 @@ export const S = {
       example: 'Example rule',
       exampleRule: 'Ask before sharing my phone number or address.',
       chips: ['Claude', 'ChatGPT', 'Grok Bot', 'Muse'],
-      points: [['Set your preferences once', 'Add the rules and preferences you want your agents to know.'], ['Review Agent Activity', 'See the tasks they report and how they scored themselves.'], ['Correct them in a few taps', 'Give feedback and turn mistakes into new rules for next time.']],
+      points: [['Set your preferences once', 'Add the rules and preferences you want your agents to know.'], ['Review Agent Activity', 'See the tasks your Connected Agents report and how they scored themselves.'], ['Correct them in a few taps', 'Give feedback and turn mistakes into new rules for next time.']],
       limitsLead: 'Rare Tomato does not control your agents.',
       limits: ' Agents choose when to read and follow your rules. Task history and adherence scores are based on what each agent reports.',
       privacy: 'Privacy', terms: 'Terms'

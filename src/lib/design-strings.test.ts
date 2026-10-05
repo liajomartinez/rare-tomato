@@ -29,7 +29,7 @@ function flat(node: unknown, prefix = "", out: Record<string, string> = {}): Rec
 
 /** Keys that differ on purpose. Each has a reason. (None today: the owner's decisions of 2026-10-04 are all constants outside S, and S matches the handoff.) */
 const DIFFERENT_ON_PURPOSE: Record<string, string> = Object.fromEntries(
-  ["nav.feed", "nav.rules", "nav.details", "nav.agents", "feed.title", "rules.title", "rules.liveHeading", "rules.liveHeading~text", "agents.title", "agents.disconnected", "agents.oldLabel", "onb.landing.points.1.0", "onb.dash.connectedHeading", "agents.museNote", "onb.setup.muse.notice", "onb.setup.stopped.title", "onb.setup.stopped.body", "onb.setup.stopped.button"].map((k) => [k, "Round 9 renames (design-source/round9): Agent Activity, Connected Agents, Your Rules, Your Rules and Info; no Disconnected and no Old X."]),
+  ["nav.feed", "nav.rules", "nav.details", "nav.agents", "feed.title", "rules.title", "rules.liveHeading", "rules.liveHeading~text", "agents.title", "agents.disconnected", "agents.oldLabel", "onb.landing.points.1.0", "onb.landing.points.1.1", "onb.dash.connectedHeading", "agents.museNote", "onb.setup.muse.notice", "onb.setup.stopped.title", "onb.setup.stopped.body", "onb.setup.stopped.button"].map((k) => [k, "Round 9 renames (design-source/round9): Agent Activity, Connected Agents, Your Rules, Your Rules and Info; no Disconnected and no Old X."]),
 );
 /** Keys that exist only in strings.ts. */
 const ONLY_IN_CODE = new Set<string>(["rules.subtext", "rules.partRules", "rules.partInfo", "agents.removed", "agents.expired", "home.ask", "home.ask~text"]);
