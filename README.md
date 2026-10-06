@@ -1,56 +1,138 @@
-# Rare Tomato
+<p align="center">
+  <a href="https://raretomato.ai"><img src="docs/assets/rare-tomato-banner.png" alt="Rare Tomato" width="640"></a>
+</p>
 
-**Correct an agent once, approve the rule, and every agent you use can get it from one place.**
+<p align="center">Teach your AI agents to work <em>your</em> way.</p>
 
-Rare Tomato is a small web app for people who use AI agents (Claude, ChatGPT, Grok Bot, Muse and others). You keep a short list of your preferences and rules. Connected Agents can read them. When an agent does something you do not like, you mark it Not right with a reason, the app drafts a rule, and you approve it. Approved rules are offered to every agent you have connected. You also see what your agents *say* they did.
+<p align="center">
+  <img alt="License: Apache 2.0" src="https://img.shields.io/badge/license-Apache%202.0-blue.svg">
+  <img alt="Status: work in progress" src="https://img.shields.io/badge/status-work%20in%20progress-orange.svg">
+</p>
 
-> **Rare Tomato is a personal project, open source and provided as is.** It is for adults who are 18 or older, anywhere in the world. Questions and requests: support@raretomato.ai.
+<p align="center"><sub><i>Work in progress. Rare Tomato is an early project, and some features may not work yet. Thanks for your patience!</i></sub></p>
 
-## Is this for you?
-**Honestly, maybe not.** If you use only Claude and your needs are simple, **Claude's own memory may already be enough.** Rare Tomato earns its place if you run **more than one agent**, or you want a **record of what your agents did against your rules**. It does not run tasks for you, and it never blocks, changes or reverses anything an agent does.
+## The problem
+
+Personal AI agents often need correcting, even when you've set custom rules. If you use more than one agent, it gets harder to keep up, since your rules and preferences start to drift apart across platforms.
+
+Rare Tomato gives you one master list of rules and preferences that's shared across agents like Claude, ChatGPT, Grok Bot, and Muse. You update it in one place, and every connected agent can check it.
+
+When an agent gets something wrong, you can give it feedback in just a few taps. Those corrections become rules, which helps your agents stay closer to what you've asked.
 
 ## How it works
-1. **Connect an agent.** The connector address is `https://raretomato.ai/mcp`; the agent signs in itself and there is no secret to copy. After it signs in it shows as *Needs confirmation* on *Connected Agents*, and it cannot use your rules or details until you confirm it and give it a name. ([Guides for each agent](docs/guides/README.md).)
-   **Then one more step for Claude and ChatGPT, which matters:** add the *instruction* (shown in setup and on Connected Agents) to the agent's own instructions. Without it, Claude and ChatGPT did not call Rare Tomato at all in our tests; with it they did on every task in a small test. Grok Bot and Muse connect with one pasted message (Muse also carries the instruction, and is Experimental). Setup shows *Checked your rules* and *Reported the test task* only when it sees those real requests from the agent; until then it shows *Waiting*.
-2. **Add your details** (preferences, contacts, family details). Only the agents you confirm, and only the kinds of detail you allow, can read them.
-3. **See Agent Activity.** Agents tell the app what they did (a *task record*). You mark each one Good or Not right.
-4. **Fix it in about four taps.** Not right, pick a reason, Draft a rule (a note is optional; the feedback is sent to Anthropic's AI to draft the rule), then Save rule on the proposed rule. Nothing becomes a rule, and no agent can see it, until you save it; Discard deletes the draft. A saved rule is active at once and has only Edit and Delete.
-5. **See how they are doing.** The Home screen shows an *Adherence score* (with a tomato that ripens as the score rises) for the last 14 days, always labeled **agent-reported** and always with a note on what it cannot see.
-6. **Agents that cannot connect** get a copy-paste **care sheet**.
-7. **Your data is yours.** Download everything, delete any single thing, or delete your account, on *Settings and data*. There is also a readable log of what your agents asked for.
 
-## Honest limits (please read)
-- **Rules are advice.** MCP, the way agents talk to Rare Tomato, is *pull*: an agent has to ask for your rules and can ignore them. Nothing here enforces a rule, and we cannot see whether an agent followed one.
-- **Scores are agent-reported and never independently verified.** The score is computed over what an agent chose to log. It cannot see an action an agent never logged, or one logged wrongly. The scorer is a best-effort language model check and can be wrong. Until the golden sets are labeled and run, **no accuracy claim is made**.
-- **The blocked-data check is best-effort, not a guarantee.** It turns away obvious ID, card, bank, password, insurance and medical-record numbers and test-result wording; it asks you to confirm health and money words, and labels health details *Sensitive*. It can miss things and can flag harmless text. It is not a guarantee that such information cannot be stored. Dietary needs and allergies are fine to add. These health allowances are provisional and may be narrowed before public launch.
-- **Not end-to-end encrypted.** Details are encrypted at rest, but our servers can decrypt them to serve your agents.
-- **Agents may keep what they read.** Deleting a detail here does not delete a copy an agent kept in its own memory.
-- **Early providers.** Hosting (Vercel), database (Neon), sign-in (WorkOS) and the Claude API (Anthropic) are used on their standard plans. We have not confirmed every provider's retention or training terms in writing. Text you type in a feedback note, a rule or a task record can reach Anthropic when a rule is drafted or checked (see the Privacy Notice in the app).
-- **Redaction before scoring is best-effort.** Names, emails, phone numbers, addresses and birth dates are replaced before text is checked, but it can miss a name.
-- **Muse is Experimental.** Muse works on a fresh connection, but in our tests it stopped working about an hour or two later; reconnect it from Connected Agents (paste the setup message again and confirm it). We do not know why. See [the Muse guide](docs/guides/muse.md).
-- **Agents only use your rules if told to.** The instruction is advice to the agent, not enforcement, and an agent can skip it. *Working* on Connected Agents means a request reached our server; it does not mean the agent followed a rule. The evidence is small: six tasks each for Claude and ChatGPT counts only. We cannot see whether you added the instruction.
-- **Jev (TypeSafe) scoring is off.** Scoring uses Claude Haiku. Jev is built but switched off until its provider answers questions about retention and training.
-- **Agent connection outcomes (SPEC 13.4).** Claude: works (the must-pass gate). ChatGPT: works on a web Plus account. Grok Bot: works (added by asking it in chat). Muse: works with the limit above. Instinct: care sheet only, by design. In our measured tests only Grok Bot checked the rules on its own; Claude, ChatGPT and Muse did not until told to.
+1. **Connect your agents.** Each agent connects to Rare Tomato over [MCP](https://modelcontextprotocol.io), the standard way agents connect to outside tools. A guided setup walks you through it one step at a time.
+2. **Add your rules and preferences.** Save your preferences and details once, instead of repeating them in every chat.
+3. **Turn corrections into rules.** When an agent gets something wrong, give it a thumbs down. Rare Tomato drafts a rule from what you wrote, and you save it.
+4. **Agents check in.** Connected agents can fetch your rules and info, and they log what they did so you can review it later.
 
-## Running it yourself
-You need Node 24. Copy `.env.example` to `.env` and fill it in (never commit `.env`). Then:
+## Screenshots
+
+<table>
+  <tr>
+    <td align="center" width="33%"><img src="docs/assets/screenshot-landing.png" alt="Landing page. Where you start." width="250"></td>
+    <td align="center" width="33%"><img src="docs/assets/screenshot-choose-agent.png" alt="Choose an agent. Pick which agent to connect first." width="250"></td>
+    <td align="center" width="33%"><img src="docs/assets/screenshot-score.png" alt="Rule-following score. See how well your agents follow your rules, and review what they did." width="250"></td>
+  </tr>
+  <tr>
+    <td align="center" valign="top"><b>Landing page.</b> Where you start.</td>
+    <td align="center" valign="top"><b>Choose an agent.</b> Pick which agent to connect first.</td>
+    <td align="center" valign="top"><b>Rule-following score.</b> See how well your agents follow your rules, and review what they did.</td>
+  </tr>
+</table>
+
+## Features
+
+- **Rules from corrections.** Give a thumbs down, review the drafted rule, and save it. Saved rules are active right away.
+- **Your Rules and Info.** One place to see and edit the rules and facts your agents check.
+- **Works with several agents.** Claude, ChatGPT, Grok Bot, and Muse (experimental).
+- **Agent Activity.** Agents log their own actions through MCP, so you can review recent tasks in a few clicks.
+- **Rule-following score.** You can visualize how often an agent reports following your rules, and suggested next steps for low scores.
+- **Guided setup.** One step per screen, a progress rail, deep links to the right settings page, and "Do this later" on every step.
+- **Guardrails for sensitive info.** Card numbers, bank account numbers, government IDs, and passwords are always rejected. Other sensitive facts ask for your confirmation first.
+- **Your data stays yours.** Your info is stored encrypted and you can delete it at any time.
+- **Open source.** Apache 2.0.
+
+## Supported agents
+
+| Agent | Status | Notes |
+| --- | --- | --- |
+| Claude | Working | Connects as a custom connector |
+| ChatGPT | Working | Connects as a custom MCP app |
+| Grok Bot | Working | Connects MCP via chat request |
+| Muse | Experimental | Our connection to Muse is experimental and may stop connecting |
+
+## Known limitations
+
+- **Agents decide whether to check Rare Tomato.** A server can't make an agent fetch or follow rules. In early testing, most agents didn't check Rare Tomato on their own, which is why setup includes a one-line starter instruction placed in each agent's own settings.
+- **The score is agent-reported.** It reflects what the agent says it did, and it isn't independently verified.
+- **The interface is changing quickly.** Screens and wording may look different from one visit to the next.
+- **Muse is experimental** and may stop connecting.
+
+## Privacy and your data
+
+- When you give a thumbs down, the text you write is sent to Anthropic so it can draft the rule.
+- Rare Tomato never stores card numbers, bank account numbers, government IDs, or passwords.
+- You can delete your rules, info, and activity at any time.
+
+See the [Privacy](https://raretomato.ai/privacy) and [Terms](https://raretomato.ai/terms) pages for details.
+
+## Tech stack
+
+- MCP server for agent connections
+- WorkOS for sign-in
+- Neon (Postgres) for storage
+- Vercel for hosting
+- Next.js (App Router) with React, written in TypeScript
+
+## Getting started
+
+**Use the hosted site.** Visit [raretomato.ai](https://raretomato.ai) and follow the guided setup. Please read the work-in-progress note above first.
+
+**Run it locally.** You need Node 24 and npm.
 
 ```bash
+git clone https://github.com/liajomartinez/rare-tomato.git
+cd rare-tomato
 npm install
-npm test            # the whole suite, with an in-memory database; no secrets needed
-npm run lint
-npx tsc --noEmit
-npm run build
-npm run dev:test    # run the site against a test database
 ```
 
-Production deploys go from a clean `git archive` export of a commit (so `.env`, `docs/` and `evals/` are never uploaded; see `.vercelignore`).
+The tests need no accounts or keys. They run against an in-memory database:
 
-## What is in the repo
-- `src/` the site, the MCP endpoint (`/mcp`) and the services.
-- `docs/SPEC.md` the one spec. `docs/guides/` per-agent connection guides. `docs/decisions/` architecture decision records. `docs/privacy/` plain operating notes (incidents, requests).
-- `evals/` the golden sets (inputs only; **the labels are the owner's**), the injection corpus, and saved results, failures included.
-- `demo-agent/` a small reference agent for the before/after demo.
+```bash
+npm test
+```
 
-## Licence
-Apache-2.0. See `LICENSE`.
+To run the app itself, copy `.env.example` to `.env` and fill in your own values. Never commit `.env`. At minimum you need:
+
+- `DATABASE_URL`: a Postgres database (the app is written for [Neon](https://neon.tech))
+- `WORKOS_API_KEY`, `WORKOS_CLIENT_ID`, `WORKOS_COOKIE_PASSWORD` (32 or more random characters) and `NEXT_PUBLIC_WORKOS_REDIRECT_URI`: a [WorkOS AuthKit](https://workos.com) project for sign-in
+- `MASTER_KEY`: 32 random bytes in base64, which encrypts stored details (for example `openssl rand -base64 32`)
+- `ANTHROPIC_API_KEY`: used to draft rules from feedback
+
+Then create the tables and start the app:
+
+```bash
+npm run db:migrate
+npm run dev
+```
+
+Open http://localhost:3000. Before sending a change, also run `npm run lint` and `npx tsc --noEmit`.
+
+## What's next
+
+- A much simpler, more automated setup for each agent
+- A cleaner, more minimal design
+- Ideas under consideration include shared orchestration across agents from multiple vendors, if early use shows a need.
+
+## Contributing
+
+Issues and suggestions are welcome. I'm a solo maintainer, so replies may take a little while. If you'd like to send a pull request, please open an issue first so we can talk it through.
+
+## License
+
+Apache 2.0. See the LICENSE file.
+
+## Contact
+
+Questions or feedback? Email support@raretomato.ai.
