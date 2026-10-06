@@ -49,8 +49,8 @@ When an agent gets something wrong, you can give it feedback in just a few taps.
 - **Agent Activity.** Agents log their own actions through MCP, so you can review recent tasks in a few clicks.
 - **Rule-following score.** You can visualize how often an agent reports following your rules, and suggested next steps for low scores.
 - **Guided setup.** One step per screen, a progress rail, deep links to the right settings page, and "Do this later" on every step.
-- **Guardrails for sensitive info.** Card numbers, bank account numbers, government IDs, and passwords are always rejected. Other sensitive facts ask for your confirmation first.
-- **Your data stays yours.** Your info is stored encrypted and you can delete it at any time.
+- **Guardrails for sensitive info.** Rare Tomato blocks card numbers, bank account numbers, government IDs, passwords, and API keys when it spots them. The check is best-effort, so please don't enter them. Other sensitive facts ask for your confirmation first.
+- **Your data stays yours.** The details you save, your task summaries, and your feedback notes are stored encrypted, and you can delete your data at any time.
 - **Open source.** Apache 2.0.
 
 ## Supported agents
@@ -72,8 +72,8 @@ When an agent gets something wrong, you can give it feedback in just a few taps.
 ## Privacy and your data
 
 - When you give a thumbs down, the text you write is sent to Anthropic so it can draft the rule.
-- Rare Tomato never stores card numbers, bank account numbers, government IDs, or passwords.
-- You can delete your rules, info, and activity at any time.
+- Rare Tomato is built to reject card numbers, bank account numbers, government IDs, and passwords. The check is best-effort, so please don't enter them.
+- You can delete individual rules, details, and task records, or your whole account, at any time.
 
 See the [Privacy](https://raretomato.ai/privacy) and [Terms](https://raretomato.ai/terms) pages for details.
 
