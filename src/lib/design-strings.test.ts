@@ -9,7 +9,10 @@ import { ACCEPT_LABEL, AGENT_INSTRUCTION, GROK_MESSAGE, MCP_URL, MUSE_MESSAGE, S
 // cue to read the change and update strings.ts.
 
 type Tree = { [k: string]: unknown };
-const source = fs.readFileSync(path.join(process.cwd(), "design-source/copy/strings.js"), "utf8");
+// The handoff files are private design notes kept outside the public repo. When they are not present these comparison tests are skipped.
+const SOURCE_FILE = path.join(process.cwd(), "design-source/copy/strings.js");
+const HAS_HANDOFF = fs.existsSync(SOURCE_FILE);
+const source = HAS_HANDOFF ? fs.readFileSync(SOURCE_FILE, "utf8") : "";
 // The handoff file writes to window.* and reads its own globals (INSTRUCTION, MCP_URL), so the sandbox is its own window.
 const sandbox: Tree & { window?: unknown } = {};
 sandbox.window = sandbox;
@@ -34,7 +37,7 @@ const DIFFERENT_ON_PURPOSE: Record<string, string> = Object.fromEntries(
 /** Keys that exist only in strings.ts. */
 const ONLY_IN_CODE = new Set<string>(["rules.subtext", "rules.partRules", "rules.partInfo", "agents.removed", "agents.expired", "home.ask", "home.ask~text"]);
 
-describe("strings.ts follows the design handoff, key by key", () => {
+describe.skipIf(!HAS_HANDOFF)("strings.ts follows the design handoff, key by key", () => {
   const a = flat(handoff);
   const b = flat(S as unknown as Tree);
 

@@ -103,7 +103,7 @@ describe("the agent endpoint accepts a token for either address", () => {
 describe("the contact address", () => {
   const root = process.cwd();
   const walk = (dir: string): string[] =>
-    fs.readdirSync(dir, { withFileTypes: true }).flatMap((e) => {
+    (fs.existsSync(dir) ? fs.readdirSync(dir, { withFileTypes: true }) : []).flatMap((e) => {
       const p = path.join(dir, e.name);
       if (e.isDirectory()) return walk(p);
       return /\.(tsx?|md)$/.test(e.name) && !/\.test\./.test(e.name) ? [p] : [];

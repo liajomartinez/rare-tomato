@@ -22,7 +22,7 @@ vi.mock("@/lib/session", () => ({ requireReady: async () => ({ id: "x" }) }));
 
 const root = process.cwd();
 const walk = (dir: string): string[] =>
-  fs.readdirSync(dir, { withFileTypes: true }).flatMap((e) => {
+  (fs.existsSync(dir) ? fs.readdirSync(dir, { withFileTypes: true }) : []).flatMap((e) => {
     const p = path.join(dir, e.name);
     if (e.isDirectory()) return e.name === "node_modules" || e.name === ".next" || e.name === ".git" ? [] : walk(p);
     return [p];
