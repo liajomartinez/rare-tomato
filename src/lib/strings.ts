@@ -1,7 +1,7 @@
 // The one place for the user-facing sentences that appear on more than one screen (honest limits, labels, notes).
 // Screens import these instead of writing their own, so a wording change is a one-line change and a copy test can check them all.
 //
-// House rules (CLAUDE.md, SPEC 6.7, 9.3): MCP is pull and rules are advice, so never say a rule is enforced or followed; scores are
+// House rules (the project copy rules, spec 6.7, 9.3): MCP is pull and rules are advice, so never say a rule is enforced or followed; scores are
 // agent-reported, never verified or independent; the blocked-data check is best-effort, never a guarantee. No pet, tamagotchi,
 // livestock or "wrangling" words. The words for turning a correction into a rule ("Draft a rule", "Proposed rule", "Save rule", "Discard") are the
 // handoff's (owner decision 5, 2026-10-04); the score-band words (O2) are Lia's, 2026-10-03. Still open: the name "Care sheet" (O6), so it lives in ONE
@@ -120,10 +120,10 @@ export const MORE_ON_TASK = "More"; // NEW
 /** The label on the edit form of a saved or proposed rule (the handoff shows an Edit button; the edit screen itself is not designed). */
 export const EDIT_THEN_APPROVE = "Edit rule";
 
-// ---- The design handoff's strings (design-source/copy/strings.js, UX-1 revision 8, 2026-10-04) ----
-// Same keys, same wording, as the handoff. A test (src/lib/design-strings.test.ts) compares this object with design-source/copy/strings.js and lists
+// ---- The design handoff's strings (its copy file, UX-1 revision 8, 2026-10-04) ----
+// Same keys, same wording, as the handoff. A test (src/lib/design-strings.test.ts) compares this object with the handoff copy file and lists
 // every difference on purpose (there are none today: the owner's decisions of 2026-10-04 are constants outside S). Screens read these keys; they do not write their own sentences.
-// When a new handoff arrives: replace design-source/, read README.md for the version ids, run that test, and update this block.
+// When a new handoff arrives: replace the handoff files, read its README for the version ids, run that test, and update this block.
 
 /** The one connector address (owner decision, 2026-10-04): https://raretomato.ai/mcp everywhere. */
 export const MCP_URL = "https://raretomato.ai/mcp";

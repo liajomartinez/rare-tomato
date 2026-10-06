@@ -1,4 +1,4 @@
-/* Named tokens for the raw values the handoff's mockups use directly (design-source/tokens/literals-used-in-screens.json).
+/* Named tokens for the raw values the handoff's mockups use directly (the design handoff's literals list).
    They are not in the designer's token files, so they live here, with names, and are reported as "added tokens".
    Nothing in this file is invented: every value comes from the mockups. Components use these names, never the raw values. */
 :root{

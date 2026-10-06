@@ -3,7 +3,7 @@ import path from "node:path";
 import { describe, expect, it } from "vitest";
 import { AGENT_REPORTED, AGENT_MEMORY_NOTE, BLOCKED_CHECK_NOTE, coverageNote, FEED_NOTE, RULES_ADVISORY, RULES_SHORT_NOTE } from "./strings";
 
-// The copy audit (spec FR-F6, FR-H3, FR-H5, 6.7, 9.3 and CLAUDE.md copy rules). It reads every screen and the shared strings file and fails when
+// The copy audit (spec FR-F6, FR-H3, FR-H5, 6.7, 9.3 and the project copy rules). It reads every screen and the shared strings file and fails when
 // the wording promises something the product cannot deliver: enforced rules, verified or independent scores, a guarantee about the
 // blocked-data check, or the banned pet and livestock words. Negative statements ("not a guarantee", "never verified") are allowed.
 

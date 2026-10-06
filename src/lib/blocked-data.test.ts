@@ -21,7 +21,7 @@ describe("rejects what we never store", () => {
     ["a stated PIN", "PIN is 4821", "password_or_code"],
     ["a security code", "CVV 123", "password_or_code"],
     ["a secret key in the style of a live key", ["sk", "test", "FAKEFAKEFAKEFAKEFAKEFAKE"].join("_"), "api_key"],
-    ["an access key id", "AKIA_REDACTED_EXAMPLE_KEY", "api_key"],
+    ["an access key id", ["AKIA", "IOSFODNN7EXAMPLE"].join(""), "api_key"],
     ["a full date of birth", "Mia was born 03/14/2019", "full_date_of_birth"],
     ["map coordinates", "home is 40.712776, -74.005974", "precise_location"],
   ])("%s", (_name, text, code) => {

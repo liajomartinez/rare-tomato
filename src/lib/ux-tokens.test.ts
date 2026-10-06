@@ -2,7 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
 
-// The design handoff (design-source/) is the source of truth for the look. These tests keep the code from drifting away from it:
+// The design handoff (kept outside this repo) is the source of truth for the look. These tests keep the code from drifting away from it:
 // the token files must be the handoff's files, and no component may write its own color, font, radius, border or shadow.
 
 const root = process.cwd();

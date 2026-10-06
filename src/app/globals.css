@@ -1,4 +1,4 @@
-/* Rare Tomato, global styles. Every color, font, radius, border and shadow below is a variable from src/app/tokens/ (see docs/ux/README.md).
+/* Rare Tomato, global styles. Every color, font, radius, border and shadow below is a variable from src/app/tokens/.
    Light mode only. Classes here are used by the screens; nothing in a component writes its own color, font name, radius or shadow. */
 
 *,*::before,*::after{box-sizing:border-box}

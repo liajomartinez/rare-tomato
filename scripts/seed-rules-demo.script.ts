@@ -1,6 +1,6 @@
 // Puts FICTIONAL sample data into one account on the Neon TEST branch, so the Your rules screen has something to show:
 // one agent connection, one fictional marketplace task, a thumbs-down with a note, and one proposed rule (no Claude call, no cost).
-// Run it through the test-database launcher (see docs/learn or the walkthrough):
+// Run it through the test-database launcher (see the walkthrough):
 //   node scripts/with-test-db.mjs npm run seed:rules-demo
 // It picks the account to fill like this: SEED_AUTH_SUBJECT if set, otherwise the one real (non-demo) account on the test branch.
 import { it } from "vitest";

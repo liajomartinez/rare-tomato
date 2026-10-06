@@ -4,7 +4,7 @@ import vm from "node:vm";
 import { describe, expect, it } from "vitest";
 import { ACCEPT_LABEL, AGENT_INSTRUCTION, GROK_MESSAGE, MCP_URL, MUSE_MESSAGE, S, SIGN_UP_CONTINUE } from "./strings";
 
-// The design handoff's strings (design-source/copy/strings.js, UX-1 revision 8) and the S object in strings.ts must say the same thing, key by key.
+// The design handoff's strings (its copy file, UX-1 revision 8) and the S object in strings.ts must say the same thing, key by key.
 // The differences below are on purpose and are listed in the build report. A new handoff that changes any other string fails this test, which is the
 // cue to read the change and update strings.ts.
 

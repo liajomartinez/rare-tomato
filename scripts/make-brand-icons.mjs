@@ -1,6 +1,6 @@
 // Makes the site icons and the share image from the real tomato art in public/brand/. Nothing is redrawn: the mark is only
 // scaled and centred on the paper color (--rt-paper in src/app/tokens/colors.css; this script may use token values).
-// Run: node scripts/make-brand-icons.mjs   (needs the dev dependency "sharp", see docs/decisions/0017-sharp-for-icons.md)
+// Run: node scripts/make-brand-icons.mjs   (needs the dev dependency "sharp"; it is a dev-only tool)
 import fs from "node:fs";
 import sharp from "sharp";
 

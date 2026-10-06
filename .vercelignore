@@ -10,7 +10,7 @@ tsconfig.tsbuildinfo
 *.log
 
 # NOTE: these directory names are anchored with a leading slash on purpose. Without it, `evals/` also matched src/lib/evals/ and the build failed (2026-10-03).
-# Added 2026-10-02 beyond the proposal (docs/proposals/deploy-env-audit-and-vercelignore.md), for two reasons.
+# Added 2026-10-02 beyond the proposal (a private deploy audit), for two reasons.
 # 1) The Arm B deployment file list showed the CLI uploaded .env and evals/.local although .gitignore lists them, so everything .gitignore hides is listed here too.
 # 2) Documentation, drafts and raw experiment outputs are not part of the app and must not be uploaded.
 /docs/
