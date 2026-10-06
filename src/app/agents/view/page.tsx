@@ -29,7 +29,7 @@ export default async function AgentPage({ searchParams }: { searchParams: Promis
   return (
     <OnbPage header={<BackHeader href="/agents" label={S.nav.agents}>{a.name}</BackHeader>}>
       <div className="row">
-        <span className="caption">{platform}</span>
+        {platform.toLowerCase() !== a.name.trim().toLowerCase() ? <span className="caption">{platform}</span> : null}
         {muse ? <Tag strong>{S.agents.experimental}</Tag> : null}
       </div>
       {expired ? (
@@ -83,7 +83,14 @@ export default async function AgentPage({ searchParams }: { searchParams: Promis
           ) : (
             <p className="caption">{NO_CALLS_YET}</p>
           )}
-          {muse ? <p className="caption">{S.agents.museNote}</p> : null}
+          {muse ? (
+            <>
+              <p className="caption">{S.agents.museNote}</p>
+              <Link href="/start/setup?agent=muse&step=form" prefetch={false} className="btn btn-block">
+                {S.agents.reconnect}
+              </Link>
+            </>
+          ) : null}
           <ChangeSettings a={a} />
         </>
       )}

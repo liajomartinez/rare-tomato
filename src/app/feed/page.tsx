@@ -1,7 +1,8 @@
 import { agentsFor, rulesFor, scoringFor, tasksFor } from "@/db/production";
 import { TASK_CATEGORIES } from "@/lib/tasks";
 import { requireReady } from "@/lib/session";
-import { Nav, Notice, SignedInAs } from "../ui";
+import Link from "next/link";
+import { BottomLink, Nav, Notice, PageSheet, Tabs } from "../ui";
 import { AGENT_MEMORY_NOTE, MORE_FILTERS, MORE_ON_TASK, S } from "@/lib/strings";
 import { Checks } from "./Checks";
 import { deleteTaskRecord } from "./actions";
@@ -17,14 +18,6 @@ export const maxDuration = 45;
 const FIRST_SHOWN = 4;
 const MORE_STEP = 25;
 
-function Tick() {
-  return (
-    <svg className="tick" width="16" height="16" viewBox="0 0 16 16" aria-hidden="true">
-      <path d="M3 8.5l3.2 3.2L13 4.6" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  );
-}
-
 const dayLabel = (day: string, now: Date) => {
   const today = now.toISOString().slice(0, 10);
   const yesterday = new Date(now.getTime() - 86_400_000).toISOString().slice(0, 10);
@@ -34,7 +27,7 @@ const dayLabel = (day: string, now: Date) => {
 export default async function Feed({
   searchParams,
 }: {
-  searchParams: Promise<{ agent?: string; category?: string; unreviewed?: string; show?: string; message?: string }>;
+  searchParams: Promise<{ agent?: string; category?: string; unreviewed?: string; show?: string; message?: string; sheet?: string }>;
 }) {
   const person = await requireReady();
   const q = await searchParams;
@@ -79,121 +72,103 @@ export default async function Feed({
     return `/feed?${params.toString()}`;
   };
 
+  const sheetHref = href({ sheet: "about" });
+  const closeHref = href({}, ["sheet"]);
   return (
     <>
       <Nav current="feed" />
-      <main className="page">
+      <main className="page-flat">
         <h1>{S.feed.title}</h1>
         <p className="caption">{S.feed.intro}</p>
-        <details className="hide-wide">
-          <summary>{S.feed.about}</summary>
-          <p className="caption">{S.feed.aboutNote}</p>
-        </details>
-        <p className="pace">{S.feed.pace}</p>
         {q.message ? <Notice>{q.message}</Notice> : null}
+        <Tabs
+          label="Which tasks to show"
+          items={[
+            { label: S.feed.filterToReview(toReview), href: href({ unreviewed: "1" }, ["show"]), active: onlyUnreviewed },
+            { label: S.feed.filterAll, href: href({ unreviewed: "0" }, ["show"]), active: !onlyUnreviewed },
+          ]}
+        />
 
-        <div className="cols">
-          <div className="stack">
-            <div className="row row-tight" role="group" aria-label="Which tasks to show">
-              <a className="chip" href={href({ unreviewed: "1" }, ["show"])} aria-current={onlyUnreviewed ? "true" : undefined}>
-                <Tick />
-                {S.feed.filterToReview(toReview)}
-              </a>
-              <a className="chip" href={href({ unreviewed: "0" }, ["show"])} aria-current={!onlyUnreviewed ? "true" : undefined}>
-                <Tick />
-                {S.feed.filterAll}
-              </a>
-            </div>
+        {shown.length === 0 ? (
+          <p className="plain-line">
+            Nothing to review. Tasks your agents report show up here.{" "}
+            <Link href="/agents" prefetch={false} className="link-sm">
+              {S.agents.title}
+            </Link>
+          </p>
+        ) : null}
 
-            <details>
-              <summary>{MORE_FILTERS}</summary>
-              <form method="get" action="/feed" className="card stack stack-3">
-                <input type="hidden" name="unreviewed" value={onlyUnreviewed ? "1" : "0"} />
-                <div className="field">
-                  <label htmlFor="agent">Agent</label>
-                  <select id="agent" name="agent" defaultValue={q.agent ?? ""}>
-                    <option value="">All agents</option>
-                    {agents.filter((a) => a.status === "active").map((a) => (
-                      <option key={a.id} value={a.id}>
-                        {a.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <div className="field">
-                  <label htmlFor="category">Kind of task</label>
-                  <select id="category" name="category" defaultValue={category ?? ""}>
-                    <option value="">All kinds</option>
-                    {TASK_CATEGORIES.map((c) => (
-                      <option key={c} value={c}>
-                        {c}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <button type="submit" className="btn-sm">
-                    Show
-                  </button>
-                </div>
-              </form>
-            </details>
-
-            {shown.length === 0 ? (
-              <section className="card">
-                <h2>{onlyUnreviewed && toReview === 0 ? "Nothing to review right now" : "Nothing here yet"}</h2>
-                <p>
-                  When one of your agents finishes a task, it can record it here. To connect one, go to <a href="/agents">Connected Agents</a>. After you confirm an agent,
-                  start a new chat in it and ask it to help with something.
-                </p>
-              </section>
-            ) : null}
-
-            {days.map(({ day, items }) => (
-              <section key={day} aria-label={dayLabel(day, now)} className="stack">
-                <p className="eyebrow">{dayLabel(day, now)}</p>
-                {items.map((task) => (
-                  <TaskCard key={task.id} task={task}>
-                    <Checks taskId={task.id} checks={checks.filter((c) => c.taskId === task.id)} />
-                    <FeedbackForm
-                      taskId={task.id}
-                      rating={task.rating}
-                      returnTo={href({})}
-                      context={{ agent: task.agentName, when: `${dayLabel(day, now).toLowerCase()} ${clockTime(task.occurredAt)}`, text: task.summary }}
-                    />
-                    <details>
-                      <summary>{MORE_ON_TASK}</summary>
-                      <form action={deleteTaskRecord} className="stack stack-2">
-                        <input type="hidden" name="taskId" value={task.id} />
-                        <div>
-                          <button type="submit" className="btn-sm">
-                            Delete this record
-                          </button>
-                        </div>
-                        <p className="caption">{AGENT_MEMORY_NOTE}</p>
-                      </form>
-                    </details>
-                  </TaskCard>
-                ))}
-              </section>
+        {days.map(({ day, items }) => (
+          <section key={day} aria-label={dayLabel(day, now)} className="flat">
+            {days.length > 1 ? <p className="eyebrow">{dayLabel(day, now)}</p> : null}
+            {items.map((task) => (
+              <TaskCard key={task.id} task={task}>
+                <Checks taskId={task.id} checks={checks.filter((c) => c.taskId === task.id)} />
+                <FeedbackForm
+                  taskId={task.id}
+                  rating={task.rating}
+                  returnTo={href({})}
+                  context={{ agent: task.agentName, when: `${dayLabel(day, now).toLowerCase()} ${clockTime(task.occurredAt)}`, text: task.summary }}
+                />
+                <details>
+                  <summary>{MORE_ON_TASK}</summary>
+                  <form action={deleteTaskRecord} className="stack stack-2">
+                    <input type="hidden" name="taskId" value={task.id} />
+                    <div>
+                      <button type="submit" className="btn-sm">
+                        Delete this record
+                      </button>
+                    </div>
+                    <p className="caption">{AGENT_MEMORY_NOTE}</p>
+                  </form>
+                </details>
+              </TaskCard>
             ))}
+          </section>
+        ))}
 
-            {olderCount > 0 ? (
-              <a className="btn btn-block" href={href({ show: String(wanted + MORE_STEP) })}>
-                {S.feed.showOlder(olderCount)}
-              </a>
-            ) : null}
-          </div>
+        {olderCount > 0 ? (
+          <Link className="link-sm" href={href({ show: String(wanted + MORE_STEP) })} prefetch={false}>
+            {S.feed.showOlder(olderCount)}
+          </Link>
+        ) : null}
 
-          <aside className="stack">
-            <div className="card card-quiet only-wide stack stack-3">
-              <h2 style={{ font: "var(--font-h3)" }}>{S.feed.about}</h2>
-              <p className="caption">{S.feed.aboutNote}</p>
-            </div>
-          </aside>
-        </div>
-        <SignedInAs email={person.email} />
+        <BottomLink href={sheetHref}>{S.feed.about}</BottomLink>
       </main>
+      {q.sheet === "about" ? (
+        <PageSheet title={S.feed.about} closeHref={closeHref}>
+          <p className="caption">{S.feed.aboutNote}</p>
+          <form method="get" action="/feed" className="stack stack-3">
+            <input type="hidden" name="unreviewed" value={onlyUnreviewed ? "1" : "0"} />
+            <p className="label-sm">{MORE_FILTERS}</p>
+            <div className="field">
+              <label htmlFor="agent">Agent</label>
+              <select id="agent" name="agent" defaultValue={q.agent ?? ""}>
+                <option value="">All agents</option>
+                {agents.filter((a) => a.status === "active").map((a) => (
+                  <option key={a.id} value={a.id}>
+                    {a.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="field">
+              <label htmlFor="category">Kind of task</label>
+              <select id="category" name="category" defaultValue={category ?? ""}>
+                <option value="">All kinds</option>
+                {TASK_CATEGORIES.map((c) => (
+                  <option key={c} value={c}>
+                    {c}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <button type="submit" className="btn-primary btn-block">
+              Show
+            </button>
+          </form>
+        </PageSheet>
+      ) : null}
     </>
   );
 }

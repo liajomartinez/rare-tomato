@@ -7,12 +7,12 @@ import { saveFact, type FormState } from "./actions";
 
 const LABEL: Record<string, string> = { preferences: "Preferences", contacts: "Contacts", family: "Family" };
 
-export function FactForm({ defaults, submitLabel }: { defaults: { id?: string; category: string; key: string; value: string }; submitLabel: string }) {
+export function FactForm({ defaults, submitLabel, showNote = true }: { defaults: { id?: string; category: string; key: string; value: string }; submitLabel: string; showNote?: boolean }) {
   const [state, action, pending] = useActionState<FormState, FormData>(saveFact, { values: defaults });
   const v = state.values ?? defaults;
 
   return (
-    <form action={action}>
+    <form action={action} className="stack stack-2">
       {v.id ? <input type="hidden" name="id" value={v.id} /> : null}
       <label>
         Kind of detail
@@ -62,7 +62,7 @@ export function FactForm({ defaults, submitLabel }: { defaults: { id?: string; c
           </p>
         </div>
       ) : null}
-      <p style={muted}>{BLOCKED_CHECK_NOTE}</p>
+      {showNote ? <p style={muted}>{BLOCKED_CHECK_NOTE}</p> : null}
       <button type="submit" disabled={pending} style={button}>
         {pending ? "Saving..." : submitLabel}
       </button>

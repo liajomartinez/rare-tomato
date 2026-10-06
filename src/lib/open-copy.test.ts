@@ -41,7 +41,7 @@ describe("open, then copy, then paste", () => {
     const s = run([{ type: "copied" }, { type: "left" }, { type: "back" }], true);
     expect(s.stage).toBe(4);
     expect(mainKind(4)).toBe("saved");
-    expect(currentLine(4)).toBe(0);
+    expect(currentLine(4)).toBe(3);
   });
 
   it("copying again at stage 4 does not go back", () => {

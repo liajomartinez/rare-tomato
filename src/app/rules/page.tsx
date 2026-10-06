@@ -1,10 +1,11 @@
-import { agentsFor, feedbackFor, rulesFor, tasksFor } from "@/db/production";
+import Link from "next/link";
+import { agentsFor, feedbackFor, profileFor, rulesFor, tasksFor } from "@/db/production";
 import { whoCanSeeRule } from "@/lib/agents-view";
 import { STRENGTHS, type RuleRecord } from "@/lib/rules";
 import { requireReady } from "@/lib/session";
-import { Banner, Nav, Notice, RulesInfoSwitch, SignedInAs, Sticker, Tag, WhoCanSee } from "../ui";
+import { BottomLink, Nav, Notice, PageSheet, Tag } from "../ui";
 import { ConflictPanel, hasContradiction, overlapsFor } from "./ConflictPanel";
-import { AGENT_MEMORY_NOTE, DRAFT_GONE, EDIT_THEN_APPROVE, OLD_PROPOSALS_HEADING, OLD_PROPOSALS_NOTE, S } from "@/lib/strings";
+import { AGENT_MEMORY_NOTE, DRAFT_GONE, EDIT_THEN_APPROVE, OLD_PROPOSALS_HEADING, S } from "@/lib/strings";
 import { approveRule, deleteRule, discardDraft, editRule, resolveRule } from "./actions";
 
 export const dynamic = "force-dynamic";
@@ -14,7 +15,7 @@ const day = (d: Date) => d.toISOString().slice(0, 10);
 
 function EditForm({ rule }: { rule: RuleRecord }) {
   return (
-    <form action={editRule} className="card stack stack-3">
+    <form action={editRule} className="stack stack-3">
       <input type="hidden" name="id" value={rule.id} />
       <div className="field">
         <label htmlFor={`text-${rule.id}`}>The rule, in plain words</label>
@@ -73,11 +74,11 @@ function WhoRow({ label, names }: { label: string; names: string[] }) {
   );
 }
 
-export default async function Rules({ searchParams }: { searchParams: Promise<{ message?: string; saved?: string; draft?: string }> }) {
+export default async function Rules({ searchParams }: { searchParams: Promise<{ message?: string; saved?: string; draft?: string; sheet?: string }> }) {
   const person = await requireReady();
   const q = await searchParams;
   await rulesFor(person.id).purgeExpiredDrafts().catch(() => 0); // drafts nobody decided on are deleted, not kept waiting
-  const [rules, agents] = await Promise.all([rulesFor(person.id).list(), agentsFor(person.id).list()]);
+  const [rules, agents, facts] = await Promise.all([rulesFor(person.id).list(), agentsFor(person.id).list(), profileFor(person.id).list()]);
   const agentName = new Map(agents.map((a) => [a.id, a.name]));
   const scopeLabel = (s: string) => (s === "all" ? "all your agents" : `only ${agentName.get(s.replace("agent:", "")) ?? "one agent"}`);
 
@@ -112,7 +113,7 @@ export default async function Rules({ searchParams }: { searchParams: Promise<{ 
     const overlaps = overlapsFor(r, rules);
     const blocked = hasContradiction(overlaps);
     return (
-      <section key={r.id} id={`proposal-${r.id}`} className="card card-dashed stack" aria-label={S.rules.eyebrow}>
+      <section key={r.id} id={`proposal-${r.id}`} className={designed ? "card card-ink card-roomy" : "flat-row stack"} aria-label={S.rules.eyebrow}>
         <div className="row row-between row-tight">
           <p className="eyebrow">{S.rules.eyebrow}</p>
           <Tag>{S.rules.notSaved}</Tag>
@@ -138,7 +139,7 @@ export default async function Rules({ searchParams }: { searchParams: Promise<{ 
         </div>
         <ConflictPanel rule={r} overlaps={overlaps} resolve={resolveRule} scopeLabel={scopeLabel} />
         <WhoRow label={S.rules.scope} names={readers(r.scope)} />
-        <div className="stack rule-above">
+        <div className="stack">
           {blocked ? (
             <p className="caption">To save this rule, choose replace, keep both, or merge above.</p>
           ) : (
@@ -169,12 +170,8 @@ export default async function Rules({ searchParams }: { searchParams: Promise<{ 
   };
 
   const ruleRow = (r: RuleRecord, isNew: boolean) => (
-    <div key={r.id} id={`rule-${r.id}`} className={`rule-row${isNew ? " rule-row-new" : ""} stack stack-2`} aria-label="Rule">
-      {isNew ? (
-        <div>
-          <Tag strong>{S.rules.justSaved}</Tag>
-        </div>
-      ) : null}
+    <div key={r.id} id={`rule-${r.id}`} className="flat-row stack stack-1" aria-label="Rule">
+      {isNew ? <b className="caption">{S.rules.justSaved}</b> : null}
       <p className="rule-row-text">{r.text}</p>
       <div className="row row-between row-tight">
         <span className="caption">{S.rules.added(day(r.approvedAt ?? r.createdAt))}</span>
@@ -198,99 +195,95 @@ export default async function Rules({ searchParams }: { searchParams: Promise<{ 
     </div>
   );
 
-  const main = (
-    <div className="stack stack-5">
-      {justSaved ? (
-        <div className="stack stack-3">
-          <Banner
-            tone="done"
-            action={
-              <a className="btn btn-quiet pull-left" href="/rules">
-                {S.rules.dismiss}
-              </a>
-            }
-          >
-            {q.message ?? S.rules.savedBanner}
-          </Banner>
-          <section className="card card-ink card-roomy" aria-label={S.rules.justSaved}>
-            <div>
-              <Sticker>{S.rules.justSaved}</Sticker>
-            </div>
-            <p className="rule-text">{justSaved.text}</p>
-            <WhoRow label={S.rules.availableTo} names={readers(justSaved.scope)} />
-            <p className="caption">{S.rules.added("just now")}</p>
-            <a className="link" href={`#rule-${justSaved.id}`}>
-              {S.rules.findIt} {"↓"}
-            </a>
-          </section>
-        </div>
-      ) : q.message ? (
-        <Notice>{q.message}</Notice>
-      ) : null}
-
-      {q.draft && !draft ? <Notice>{DRAFT_GONE}</Notice> : null}
-      {draft ? proposal(draft, draftWords, true) : null}
-
-      {older.length > 0 ? (
-        <section aria-label={OLD_PROPOSALS_HEADING} className="stack">
-          <p className="eyebrow">{OLD_PROPOSALS_HEADING}</p>
-          <p className="caption">{OLD_PROPOSALS_NOTE}</p>
-          {older.map((r, i) => proposal(r, olderWords[i], false))}
-        </section>
-      ) : null}
-
-      <div className="stack stack-3">
-        <h2>{S.rules.liveHeading(listed.length)}</h2>
-        {listed.length === 0 ? (
-          <p className="caption">None yet. No agent sees a rule until you save one.</p>
-        ) : (
-          <>
-            <div className="rules-list">{listed.map((r) => ruleRow(r, r.id === justSaved?.id))}</div>
-            <p className="caption">{S.rules.delNote}</p>
-          </>
-        )}
-      </div>
-
-      {retired.length > 0 ? (
-        <details>
-          <summary>Earlier versions and turned-down rules ({retired.length})</summary>
-          {retired.map((r) => (
-            <article key={r.id} className="card" aria-label="Retired rule">
-              <p className="caption">Version {r.version} · not shown to any agent</p>
-              <p className="rule-row-text">{r.text}</p>
-              <Details rule={r} scope={scopeLabel(r.scope)} />
-              <form action={deleteRule}>
-                <input type="hidden" name="id" value={r.id} />
-                <button type="submit" className="btn-sm">
-                  Delete this rule
-                </button>
-                <span className="caption"> {AGENT_MEMORY_NOTE}</span>
-              </form>
-            </article>
-          ))}
-        </details>
-      ) : null}
-    </div>
-  );
-
-  const who = <WhoCanSee title={S.rules.whoTitle} agents={readers("all")} note={S.agents.whoNote} />;
+  const twoSections = true; // rules and info: a page with two sections shows both headings
+  const closeHref = "/rules";
 
   return (
     <>
       <Nav current="rules" />
-      <main className="page">
-        <div className="stack stack-2">
-          <h1>{S.rules.title}</h1>
-          <p className="caption">{S.rules.subtext}</p>
-          <RulesInfoSwitch current="rules" />
-          <p className="caption">{S.rules.short}</p>
-        </div>
-        <div className="cols">
-          {main}
-          {who}
-        </div>
-        <SignedInAs email={person.email} />
+      <main className="page-flat">
+        <h1>{S.rules.title}</h1>
+        <p className="caption">{S.rules.subtext}</p>
+        {justSaved ? <p className="plain-line" role="status">{q.message ?? S.rules.savedBanner}</p> : q.message ? <Notice>{q.message}</Notice> : null}
+        {q.draft && !draft ? <Notice>{DRAFT_GONE}</Notice> : null}
+        {draft ? (
+          proposal(draft, draftWords, true)
+        ) : (
+          <Link href="/rules/new" prefetch={false} className="btn btn-primary btn-block">
+            Write a rule
+          </Link>
+        )}
+
+        {older.length > 0 ? (
+          <section aria-label={OLD_PROPOSALS_HEADING} className="flat">
+            <p className="eyebrow">{OLD_PROPOSALS_HEADING}</p>
+            {older.map((r, i) => proposal(r, olderWords[i], false))}
+          </section>
+        ) : null}
+
+        <section className="flat" aria-label="Rules">
+          {twoSections ? <h2>{S.rules.liveHeading(listed.length)}</h2> : null}
+          {listed.length === 0 ? <p className="plain-line">None yet. No agent sees a rule until you save one.</p> : listed.map((r) => ruleRow(r, r.id === justSaved?.id))}
+        </section>
+
+        <section className="flat" aria-label="Info">
+          {twoSections ? <h2>{S.rules.partInfo}</h2> : null}
+          {facts.length === 0 ? (
+            <p className="plain-line">Nothing saved yet. Agents can read the details you add here.</p>
+          ) : (
+            facts.map((f) => (
+              <div key={f.id} className="flat-row row row-between row-nowrap">
+                <div className="stack stack-0 grow">
+                  <b>{f.key}</b>
+                  <span>{f.value}</span>
+                  {f.sensitive ? <span className="caption">Sensitive</span> : null}
+                </div>
+                <Link href={`/profile#fact-${f.id}`} prefetch={false} className="btn btn-quiet pull-right">
+                  {S.rules.editShort}
+                </Link>
+              </div>
+            ))
+          )}
+          <p style={{ margin: 0 }}>
+            <Link href="/profile" prefetch={false} className="link-sm">
+              Add a detail
+            </Link>
+          </p>
+        </section>
+
+        {retired.length > 0 ? (
+          <details>
+            <summary>Earlier versions and turned-down rules ({retired.length})</summary>
+            <div className="flat">
+              {retired.map((r) => (
+                <article key={r.id} className="flat-row stack stack-1" aria-label="Retired rule">
+                  <p className="caption">Version {r.version} · not shown to any agent</p>
+                  <p className="rule-row-text">{r.text}</p>
+                  <Details rule={r} scope={scopeLabel(r.scope)} />
+                  <form action={deleteRule}>
+                    <input type="hidden" name="id" value={r.id} />
+                    <button type="submit" className="btn-quiet pull-left">
+                      Delete this rule
+                    </button>
+                  </form>
+                </article>
+              ))}
+            </div>
+          </details>
+        ) : null}
+
+        <BottomLink href="/rules?sheet=about">About rules</BottomLink>
       </main>
+      {q.sheet === "about" ? (
+        <PageSheet title="About rules" closeHref={closeHref}>
+          <p className="caption">{S.rules.short}</p>
+          <p className="caption">{S.rules.delNote}</p>
+          <p className="caption">{AGENT_MEMORY_NOTE}</p>
+          <p className="label-sm">{S.rules.whoTitle}</p>
+          <p className="caption">{readers("all").length ? readers("all").join(", ") : "No agents can see this."}</p>
+          <p className="caption">{S.agents.whoNote}</p>
+        </PageSheet>
+      ) : null}
     </>
   );
 }

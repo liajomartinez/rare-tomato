@@ -167,10 +167,13 @@ describe("decision 10: Muse is Experimental, with the reliability notice and a R
     expect(setup).toContain("COPY.muse.message?.tag");
     expect(read("src/lib/onboarding-copy.ts")).toContain("Experimental");
     expect(S.onb.pick.experimental).toBe("Experimental");
+    // Round 12: the list shows only the name and a small status; the note and Reconnect are on the agent's own page.
     const agents = read("src/app/agents/page.tsx");
-    expect(agents).toContain("S.agents.museNote");
-    expect(agents).toContain("S.agents.reconnect");
     expect(agents).toContain("S.agents.experimental");
+    const agentPage = read("src/app/agents/view/page.tsx");
+    expect(agentPage).toContain("S.agents.museNote");
+    expect(agentPage).toContain("S.agents.reconnect");
+    expect(agentPage).toContain("S.agents.experimental");
   });
 });
 

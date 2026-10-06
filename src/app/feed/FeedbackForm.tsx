@@ -49,10 +49,10 @@ export function FeedbackForm({
       <input type="hidden" name="returnTo" value={returnTo} />
       <div className="row">
         <div className="row row-tight">
-          <button type="submit" name="rating" value="up" className="rate" disabled={pending} aria-pressed={rating === "up"}>
+          <button type="submit" name="rating" value="up" className="btn-quiet pull-left" disabled={pending} aria-pressed={rating === "up"}>
             {S.feed.up}
           </button>
-          <button ref={opener} type="button" className="rate" onClick={() => setOpen(true)} aria-haspopup="dialog" aria-pressed={rating === "down"}>
+          <button ref={opener} type="button" className="btn-quiet" onClick={() => setOpen(true)} aria-haspopup="dialog" aria-pressed={rating === "down"}>
             {S.feed.down}
           </button>
         </div>

@@ -168,16 +168,57 @@ export function AppIcon() {
   return <img className="app-icon" src="/brand/app-icon.png" alt="" width={48} height={48} />;
 }
 
-/** Your Rules and Info is one place with two parts: the rules, and the saved details. The two links switch between them. */
-export function RulesInfoSwitch({ current }: { current: "rules" | "info" }) {
+// ---- Round 12: flat layout pieces. At most one card per screen; everything else is plain text, plain rows and small links. ----
+
+/** Plain text tabs: the active one is bold and underlined ("To review (0)   All"). */
+export function Tabs({ items, label }: { items: { label: string; href: string; active: boolean }[]; label: string }) {
   return (
-    <nav className="row row-tight" aria-label={S.rules.title}>
-      <Link href="/rules" prefetch={false} className="chip" aria-current={current === "rules" ? "true" : undefined}>
-        {S.rules.partRules}
-      </Link>
-      <Link href="/profile" prefetch={false} className="chip" aria-current={current === "info" ? "true" : undefined}>
-        {S.rules.partInfo}
-      </Link>
+    <nav className="tabs" aria-label={label}>
+      {items.map((t) => (
+        <Link key={t.label} href={t.href} prefetch={false} aria-current={t.active ? "true" : undefined}>
+          {t.label}
+        </Link>
+      ))}
     </nav>
+  );
+}
+
+/** The one small link at the very bottom of a page. It opens a sheet (the page reads `?sheet=` and draws a PageSheet). */
+export function BottomLink({ href, children }: { href: string; children: ReactNode }) {
+  return (
+    <p className="bottom-links">
+      <Link href={href} prefetch={false} className="link-sm">
+        {children}
+      </Link>
+    </p>
+  );
+}
+
+/** A sheet over the page (bottom sheet on a phone, centred dialog on a wide screen), closed by a link back to the page. No script needed. */
+export function PageSheet({ title, closeHref, children }: { title: string; closeHref: string; children: ReactNode }) {
+  return (
+    <div className="scrim">
+      <div className="sheet" role="dialog" aria-modal="true" aria-label={title}>
+        <div className="sheet-handle" aria-hidden="true" />
+        <div className="row row-between row-nowrap">
+          <h2>{title}</h2>
+          <Link href={closeHref} prefetch={false} className="btn btn-quiet pull-right">
+            {S.sheet.close}
+          </Link>
+        </div>
+        {children}
+      </div>
+    </div>
+  );
+}
+
+/** An agent's name, once. The kind of agent is added in small gray text only when the name is different from it ("Marge" and "Claude", not "Claude · Claude"). */
+export function AgentLabel({ name, type }: { name: string; type?: string | null }) {
+  const differs = type && type.trim().toLowerCase() !== name.trim().toLowerCase();
+  return (
+    <>
+      <b>{name}</b>
+      {differs ? <span className="caption"> {type}</span> : null}
+    </>
   );
 }

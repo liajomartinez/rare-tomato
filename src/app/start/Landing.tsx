@@ -26,7 +26,7 @@ export function Landing() {
     </div>
   );
   const example = (
-    <section className="card" aria-label={L.example}>
+    <section className="stack stack-2" aria-label={L.example}>
       <div>
         <Sticker>{L.example}</Sticker>
       </div>

@@ -8,7 +8,7 @@ import type { AgentCopy } from "@/lib/onboarding-copy";
 import { currentLine, initialState, mainKind, reduce, type OpenCopyEvent, type Stage } from "@/lib/open-copy";
 import { checkState, NOT_SEEN_AFTER_MS, startPolling, type FetchResult, type PollStatus } from "@/lib/status-poll";
 import { StatusIcon } from "../ui";
-import { Clock, Actions, Later, Lines, MsgBox, OnbPage, OutLink, Title } from "./onb";
+import { Clock, Actions, CopiedLine, Later, Lines, MsgBox, OnbPage, OutLink, Title } from "./onb";
 import { CopyFailed, copyText, useAway } from "./OpenCopy";
 
 // Check it works (Claude C6, ChatGPT G6, Grok Bot K4, Muse M6). The status comes from GET /agents/status?agent=<id>, which reads our own audit log, so
@@ -199,9 +199,12 @@ function Waiting(props: Parameters<typeof CheckScreen>[0]) {
       <Title>{K.title}</Title>
       {props.notice}
       <Lines lines={K.lines} at={currentLine(stage)} />
-      <div ref={box} style={{ userSelect: "all" }}>
-        <MsgBox text={K.msg} copied={state.stage >= 3} />
-      </div>
+      {stage === 2 ? (
+        <div ref={box} style={{ userSelect: "all" }}>
+          <MsgBox text={K.msg} />
+        </div>
+      ) : null}
+      {stage === 3 ? <CopiedLine /> : null}
       {failed ? <CopyFailed /> : null}
       <Rows rows={K.rows} states={["wait", "wait"]} waiting={K.waiting} />
     </OnbPage>

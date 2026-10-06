@@ -55,7 +55,7 @@ export function RailBar({ agent, at, all, summaryHref }: { agent: AgentKey | "ge
               return (
                 <li key={t} className={`onb-seg is-${s}`} aria-current={s === "now" ? "step" : undefined}>
                   {s === "done" && summaryHref ? (
-                    <Link href={summaryHref(i + 1)} prefetch={false} style={{ display: "block", height: "100%" }}>
+                    <Link href={summaryHref(i + 1)} prefetch={false}>
                       {inner}
                     </Link>
                   ) : (
@@ -123,18 +123,18 @@ export function Title({ children, body, tag, mark }: { children: ReactNode; body
   );
 }
 
-/** The three numbered lines. `at` is the bold line (1 to 3), or 0 for none. */
+/** The numbered lines. Round 12: only the current line is shown (bold, with its number); `at` is 1 to 3. With `at` 0 all three show, none bold. */
 export function Lines({ lines, at = 0 }: { lines: readonly string[]; at?: number }) {
   return (
     <ol className="onb-lines">
-      {lines.map((t, i) => (
+      {lines.map((t, i) => (at !== 0 && at !== i + 1 ? null : (
         <li key={t} className={at === i + 1 ? "on" : undefined} aria-current={at === i + 1 ? "step" : undefined}>
           <span className="badge" aria-hidden="true">
             {i + 1}
           </span>
           <span className="txt">{t}</span>
         </li>
-      ))}
+      )))}
     </ol>
   );
 }
@@ -151,6 +151,16 @@ export function MsgBox({ text, copied }: { text: string; copied?: boolean }) {
         </span>
       ) : null}
     </div>
+  );
+}
+
+/** The tick and "Copied" on its own line (used while the box itself is hidden). */
+export function CopiedLine() {
+  return (
+    <span className="onb-copied" role="status">
+      <StatusIcon kind="check" />
+      Copied
+    </span>
   );
 }
 

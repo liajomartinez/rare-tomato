@@ -154,8 +154,8 @@ describe("the setup screen is built on real calls only", () => {
 
   it("reads the step from the audit-log calls (resumeStep), and never from a query word that a button could set", () => {
     expect(page).toContain("resumeStep(key, mine, hasRule)");
-    expect(page).not.toMatch(/q.(done|ready|verified)/);
-    expect(page).not.toMatch(/searchParams[^;]*(ready|verified)/);
+    expect(page).not.toMatch(/q\.(done|ready|verified)/);
+    expect(page).not.toMatch(/searchParams[^;]*\b(ready|verified)\b/);
   });
 
   it("the check screen gets ready from the status endpoint (our own audit log), never from a button", () => {

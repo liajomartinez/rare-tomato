@@ -25,7 +25,8 @@
     "admin": "node --env-file=.env node_modules/vitest/vitest.mjs run --config vitest.scripts.config.mts scripts/admin.script.ts --disableConsoleIntercept",
     "admin:test": "node scripts/with-test-db.mjs node node_modules/vitest/vitest.mjs run --config vitest.scripts.config.mts scripts/admin.script.ts --disableConsoleIntercept",
     "eval:golden": "node --env-file=.env node_modules/vitest/vitest.mjs run --config vitest.scripts.config.mts scripts/eval-golden.script.ts --disableConsoleIntercept",
-    "eval:injection": "node --env-file=.env node_modules/vitest/vitest.mjs run --config vitest.scripts.config.mts scripts/eval-injection-live.script.ts --disableConsoleIntercept"
+    "eval:injection": "node --env-file=.env node_modules/vitest/vitest.mjs run --config vitest.scripts.config.mts scripts/eval-injection-live.script.ts --disableConsoleIntercept",
+    "check:rail": "node scripts/check-rail-layout.mjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.129.0",
@@ -48,6 +49,7 @@
     "drizzle-kit": "^0.31.11",
     "eslint": "^9.39.5",
     "eslint-config-next": "^16.3.7",
+    "playwright-core": "^1.63.0",
     "sharp": "^0.35.5",
     "typescript": "^6.0.3",
     "vitest": "^5.0.2"

@@ -2,14 +2,14 @@ import { careSheetFor } from "@/db/production";
 import { CATEGORIES, type Category } from "@/lib/profile";
 import { requireReady } from "@/lib/session";
 import { CARE_SHEET_LIMITED_NOTE, CARE_SHEET_NAME, CARE_SHEET_NAME_LOWER } from "@/lib/strings";
-import { button, card, field, muted, Nav, page } from "../ui";
+import { BottomLink, button, field, muted, Nav, page, PageSheet } from "../ui";
 import { CopyButton } from "./CopyButton";
 
 export const dynamic = "force-dynamic";
 
 const TITLE: Record<Category, string> = { preferences: "Preferences", contacts: "Contacts", family: "Family details" };
 
-export default async function CareSheet({ searchParams }: { searchParams: Promise<{ c?: string | string[]; sensitive?: string; go?: string }> }) {
+export default async function CareSheet({ searchParams }: { searchParams: Promise<{ c?: string | string[]; sensitive?: string; go?: string; sheet?: string }> }) {
   const person = await requireReady();
   const q = await searchParams;
   const asked = Array.isArray(q.c) ? q.c : q.c ? [q.c] : q.go ? [] : ["preferences"];
@@ -24,13 +24,7 @@ export default async function CareSheet({ searchParams }: { searchParams: Promis
         For an agent that cannot connect to Rare Tomato, copy this and paste it into the agent&apos;s own memory or instructions. It lists your approved rules and
         the details you choose below. Nothing else is included.
       </p>
-      <p style={muted}>
-        It is a snapshot, so it goes out of date when you change a rule or a detail. Pasting it asks the agent to read it; nothing makes an agent follow it.
-      </p>
-
-      <p style={muted}>{CARE_SHEET_LIMITED_NOTE}</p>
-
-      <form method="get" action="/care-sheet" style={card}>
+      <form method="get" action="/care-sheet" className="stack stack-2">
         <input type="hidden" name="go" value="1" />
         <fieldset>
           <legend>Which details to include</legend>
@@ -59,6 +53,15 @@ export default async function CareSheet({ searchParams }: { searchParams: Promis
         <textarea readOnly value={sheet} rows={18} className="copy-box-sm" style={field} />
       </label>
       <CopyButton text={sheet} />
+      <BottomLink href="/care-sheet?sheet=about">About this sheet</BottomLink>
+      {q.sheet === "about" ? (
+        <PageSheet title="About this sheet" closeHref="/care-sheet">
+          <p style={muted}>
+            It is a snapshot, so it goes out of date when you change a rule or a detail. Pasting it asks the agent to read it; nothing makes an agent follow it.
+          </p>
+          <p style={muted}>{CARE_SHEET_LIMITED_NOTE}</p>
+        </PageSheet>
+      ) : null}
     </main>
   );
 }

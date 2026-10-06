@@ -34,8 +34,8 @@ export function reduce(state: OpenCopyState, event: OpenCopyEvent, opts: { hasSt
   }
 }
 
-/** The one line (1, 2 or 3) shown in bold, or 0 for none. In stage 4 nothing is highlighted. */
-export const currentLine = (stage: Stage): 0 | 1 | 2 | 3 => (stage === 4 ? 0 : stage);
+/** The one line (1, 2 or 3) shown, in bold. Round 12: only the current line is shown. Stage 4 ("I've saved it") shows the last line, the paste-and-save one. */
+export const currentLine = (stage: Stage): 1 | 2 | 3 => (stage === 4 ? 3 : stage);
 
 /** What the main button is for each stage. */
 export type MainKind = "open" | "copy" | "goBack" | "saved";

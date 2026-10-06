@@ -267,17 +267,16 @@ details[open] > summary .swap .on-closed{display:none}
 
 /* round 9 onboarding: one 56px header row, a centred 560px column, numbered lines, and an action group that sits under the content and sticks to the bottom only when the content is taller than the screen */
 .onb{display:flex;flex-direction:column;background:var(--surface-page)}
-/* the setup flow is one focused column: the site footer (Privacy, Terms) is left off these screens so the main button can sit directly under the content */
-body:has(.onb) .site-footer{display:none}
 .onb-hdr{position:sticky;top:0;z-index:4;height:var(--onb-hdr-h);background:var(--surface-page);border-bottom:var(--line-card)}
 .onb-hdr-in{height:100%;max-width:var(--measure-onb);margin:0 auto;padding:0 var(--space-2) 0 var(--gutter);display:flex;align-items:center;gap:var(--space-3)}
 .onb-mark{display:block;flex:none;height:var(--onb-mark-h);width:auto}
 .onb-logo{display:block;flex:none;height:26px;width:auto}
 .onb-rail{flex:1;min-width:0;display:flex;flex-direction:column;gap:5px;padding-right:var(--space-2)}
 .onb-rail ol{list-style:none;margin:0;padding:0;display:flex;gap:5px;align-items:center}
-.onb-seg{height:var(--onb-seg-h);flex:1;position:relative}
-.onb-seg.is-now{flex:2.2}
-.onb-seg a,.onb-seg > span.shape{display:grid;place-items:center;height:100%;border-radius:var(--radius-seg);box-sizing:border-box}
+/* three equal segments; the shape fills its segment whether or not the segment is a link (a finished step links to its summary) */
+.onb-seg{height:var(--onb-seg-h);flex:1 1 0;min-width:0;position:relative}
+.onb-seg a{display:block;height:100%;width:100%}
+.onb-seg .shape{display:grid;place-items:center;width:100%;height:100%;border-radius:var(--radius-seg);box-sizing:border-box}
 .onb-seg.is-done .shape{background:var(--rt-ink);color:var(--rt-paper)}
 .onb-seg.is-now .shape{background:var(--rt-blue);border:var(--line-ink)}
 .onb-seg.is-next .shape{border:var(--line-ink2-thin)}
@@ -345,3 +344,29 @@ body:has(.onb) .site-footer{display:none}
 .onb-choose > b{font:var(--font-onb-line-on)}
 .onb-links .btn-quiet,.onb-links button.btn-quiet{margin-left:calc(var(--space-3) * -1);padding:0 var(--space-3)}
 .onb-item-top button{min-height:var(--target-min);padding:0 var(--space-4)}
+
+/* round 12: flat layout. One card at most per screen; plain rows, text tabs, small links. */
+.tabs{display:flex;gap:var(--space-5);flex-wrap:wrap}
+.tabs a{display:inline-flex;align-items:center;min-height:var(--target-min);font:var(--font-link-sm);color:var(--text-body);text-decoration:none}
+.tabs a[aria-current="true"]{font-weight:var(--fw-bold);text-decoration:underline;text-decoration-thickness:2px;text-underline-offset:6px}
+.bottom-links{margin:var(--space-5) 0 0;display:flex;flex-wrap:wrap;gap:var(--space-4)}
+.flat{display:flex;flex-direction:column}
+.flat > .flat-row{padding:var(--space-3) 0;margin:0}
+.flat > .flat-row + .flat-row{border-top:var(--line-card)}
+.flat-row .meta{font:var(--font-small);color:var(--text-secondary)}
+.plain-line{margin:0;font:var(--font-prose)}
+.home-sheet-row > summary{justify-content:space-between;color:var(--text-body);text-decoration:none;font:var(--font-link-sm);width:100%}
+.home-sheet-row > summary::after{content:"\203A";font:var(--font-name-lg);transform:rotate(90deg)}
+.home-sheet-row[open] > summary::after{transform:rotate(-90deg)}
+.home-sheet-row > summary::marker,.home-sheet-row > summary::-webkit-details-marker{display:none}
+.home-sheet-row > summary{list-style:none}
+.page-flat{max-width:var(--measure-narrow);margin:0 auto;padding:var(--space-2) var(--gutter) var(--space-6);display:flex;flex-direction:column;gap:var(--space-4)}
+@media (min-width:900px){.page-flat{padding:var(--space-4) 32px var(--space-7)}}
+/* round 12: the setup screens are flat too. The only bordered box is the instruction text in the Copy state. */
+.onb-msg{background:transparent;border:var(--line-ink-thin)}
+.onb-items{border:0;background:transparent;padding:0}
+.onb-item{border-top:var(--line-card)}
+.onb-choose,.onb-panel,.onb-waitrows,.onb-shot{background:transparent}
+.onb-choose{padding:0}
+.onb-waitrows{padding:0}
+.onb-panel{padding:var(--space-2) 0}

@@ -8,7 +8,7 @@ import { S } from "./strings";
 // saved details is Your Rules and Info. "Old Claude" and "Disconnected" are never shown. This fails if one of the old phrases comes back in any user-facing string.
 
 const BANNED = ["Your details", "What your agents did", "Old Claude", "Disconnected"];
-const BANNED_PATTERNS = [/\bOld (Claude|ChatGPT|Grok Bot|Grok|Muse|Marge|Pip)\b/, /^Your agents$/m, /\bYour agents\b(?! can| may| will)/];
+const BANNED_PATTERNS = [/\bOld (Claude|ChatGPT|Grok Bot|Grok|Muse|Marge|Pip)\b/, /^Your agents$/m, /\bYour agents\b(?! can| may| will| check)/];
 
 const root = process.cwd();
 const walk = (dir: string): string[] =>

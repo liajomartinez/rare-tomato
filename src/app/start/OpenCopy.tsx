@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useReducer, useRef, useState, type ReactNode } from "react";
 import { linkUrl, type LinkId } from "@/lib/agent-links";
 import { currentLine, initialState, mainKind, reduce, type OpenCopyEvent, type Stage } from "@/lib/open-copy";
-import { Actions, Later, Lines, MsgBox, OnbPage, OutLink } from "./onb";
+import { Actions, CopiedLine, Later, Lines, MsgBox, OnbPage, OutLink } from "./onb";
 
 // The open, then copy, then paste screens (round 9). The stage logic is in src/lib/open-copy.ts; this file is the browser side of it:
 // it hears when the person leaves and comes back (page visibility and window focus) and does the copying.
@@ -179,9 +179,13 @@ export function OpenCopyScreen(props: {
     <OnbPage header={props.header} actions={actions}>
       {props.top}
       <Lines lines={props.lines} at={currentLine(stage)} />
-      <div ref={box} style={{ userSelect: "all" }}>
-        <MsgBox text={props.text} copied={state.stage >= 3} />
-      </div>
+      {/* The text is shown only in the Copy state, as a plain bordered box; after copying only the tick and "Copied" show. */}
+      {stage === 2 ? (
+        <div ref={box} style={{ userSelect: "all" }}>
+          <MsgBox text={props.text} />
+        </div>
+      ) : null}
+      {stage === 3 ? <CopiedLine /> : null}
       {failed ? <CopyFailed /> : null}
       {props.bottom}
     </OnbPage>
@@ -227,7 +231,7 @@ export function ItemsScreen(props: {
       actions={<Actions main={<OutLink id={props.linkId} kind="primary">{props.openLabel}</OutLink>} links={<Later />} />}
     >
       {props.top}
-      <Lines lines={props.lines} at={copied.size === 0 ? 0 : line === 3 ? 3 : 2} />
+      <Lines lines={props.lines} at={line} />
       <div className="onb-items">
         {props.items.map((it) => (
           <div key={it.label} className="onb-item">

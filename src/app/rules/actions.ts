@@ -101,3 +101,16 @@ export async function deleteRule(formData: FormData) {
   const gone = await dataFor(person.id).deleteRule(text(formData, "id"));
   done(gone ? "Deleted. This does not delete a copy an agent may have kept in its own memory." : "We could not find that rule.");
 }
+
+/** "Save rule" on Write a rule: the person's own words become one rule, approved by them in the same tap, for every agent. The rule service still checks the text. */
+export async function writeRule(formData: FormData) {
+  const person = await requireReady();
+  const body = text(formData, "text").trim();
+  if (!body) redirect("/rules/new?error=" + encodeURIComponent("Type a rule first."));
+  const svc = rulesFor(person.id);
+  const made = await svc.propose({ text: body, category: "other", scope: "all", when: "Any task", because: "Your own words." });
+  if (!made.ok) redirect("/rules/new?error=" + encodeURIComponent(made.message));
+  const approved = await svc.approve(made.rule.id);
+  if (!approved.ok) redirect("/rules/new?error=" + encodeURIComponent(approved.message));
+  done(SAVED_AS_RULE_BANNER, made.rule.id);
+}

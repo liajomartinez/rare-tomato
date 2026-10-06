@@ -1,5 +1,5 @@
 import type { RuleRecord } from "@/lib/rules";
-import { button, card, field, muted } from "../ui";
+import { button, field, muted } from "../ui";
 
 // Shown on a proposed rule that overlaps one the person already has (spec 6.3, FR-E3): both rules side by side, what the
 // check found in plain words, and the choices. The check only informs. Nothing here is decided for the person, and
@@ -40,7 +40,7 @@ export function ConflictPanel({ rule, overlaps, resolve, scopeLabel }: { rule: R
     <section aria-label="Overlaps with your existing rules">
       <h3>This overlaps a rule you already have</h3>
       {overlaps.map(({ target, verdict }) => (
-        <div key={target.id} style={card}>
+        <div key={target.id} className="stack stack-2">
           <p role={verdict === "contradicts" ? "alert" : "status"}>
             <strong>{VERDICT_TEXT[verdict]}</strong>
           </p>

@@ -3,41 +3,38 @@
 import { useEffect, useState, useSyncExternalStore } from "react";
 import { DISMISS_KEY, installCardState, platformFromUserAgent, type InstallCardState } from "@/lib/install-card";
 import { S } from "@/lib/strings";
-import { AppIcon } from "./ui";
 
 // The "add to home screen" card (SPEC FR-K2). The rules for when it shows live in src/lib/install-card.ts. A home-screen icon and a
 // full-screen window only: no offline mode and no push notifications.
 
 export function InstallCardView({ state, onInstall, onDismiss }: { state: InstallCardState; onInstall?: () => void; onDismiss?: () => void }) {
   if (state === "hidden") return null;
+  // One plain row with a chevron, collapsed by default; tapping it opens the instructions and a "Not now" link.
   return (
-    <section className="card card-quiet" aria-label="Add to your home screen">
-      <div className="row row-nowrap" style={{ alignItems: "flex-start" }}>
-        <AppIcon />
-        <div className="stack stack-1">
-          <h3>{S.home.installTitle}</h3>
-          <p className="caption">{S.home.installBody}</p>
+    <details className="home-sheet-row" aria-label="Add to your home screen">
+      <summary>{S.home.installTitle}</summary>
+      <div className="stack stack-2" style={{ paddingBottom: "var(--space-3)" }}>
+        <p className="caption">{S.home.installBody}</p>
+        {state === "ios_steps" ? <p>On iPhone: tap the Share button in Safari, then tap Add to Home Screen.</p> : null}
+        {state === "unsupported" ? (
+          <p className="caption">
+            This browser does not offer a one-tap install. On iPhone, use Safari: tap Share, then Add to Home Screen. On Android, use Chrome&apos;s menu and choose Add to Home screen.
+          </p>
+        ) : null}
+        <div className="row">
+          {state === "button" ? (
+            <button type="button" className="btn-sm" onClick={onInstall}>
+              {S.home.installShow}
+            </button>
+          ) : null}
+          {onDismiss ? (
+            <button type="button" className="btn-quiet pull-left" onClick={onDismiss}>
+              {S.home.installLater}
+            </button>
+          ) : null}
         </div>
       </div>
-      {state === "ios_steps" ? <p>On iPhone: tap the Share button in Safari, then tap Add to Home Screen.</p> : null}
-      {state === "unsupported" ? (
-        <p className="caption">
-          This browser does not offer a one-tap install. On iPhone, use Safari: tap Share, then Add to Home Screen. On Android, use Chrome&apos;s menu and choose Add to Home screen.
-        </p>
-      ) : null}
-      <div className="row">
-        {state === "button" ? (
-          <button type="button" className="btn-sm" onClick={onInstall}>
-            {S.home.installShow}
-          </button>
-        ) : null}
-        {onDismiss ? (
-          <button type="button" className="btn-quiet" onClick={onDismiss}>
-            {S.home.installLater}
-          </button>
-        ) : null}
-      </div>
-    </section>
+    </details>
   );
 }
 

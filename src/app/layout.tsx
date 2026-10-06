@@ -1,5 +1,4 @@
 import type { Metadata, Viewport } from "next";
-import Link from "next/link";
 import { baseUrl } from "../lib/base-address";
 import { BROWSER_THEME_COLOR } from "./brand-colors";
 import "./tokens/fonts.css";
@@ -37,15 +36,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en">
       <body>
         {children}
-        <footer className="site-footer">
-          <Link href="/privacy" prefetch={false}>
-            Privacy
-          </Link>{" "}
-          &middot;{" "}
-          <Link href="/terms" prefetch={false}>
-            Terms
-          </Link>
-        </footer>
       </body>
     </html>
   );

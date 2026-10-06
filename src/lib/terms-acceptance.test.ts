@@ -87,11 +87,14 @@ describe("the One quick thing step", () => {
     expect(read("src/app/page.tsx")).toContain('redirect("/welcome")');
   });
 
-  it("a Privacy and Terms footer is on every page, without the word draft", () => {
+  it("Privacy and Terms are not in page bodies: they are in Settings and data and on the signed-out pages, without the word draft", () => {
     const layout = read("src/app/layout.tsx");
-    expect(layout).toContain('href="/privacy"');
-    expect(layout).toContain('href="/terms"');
-    expect(layout).not.toMatch(/draft/i);
+    expect(layout).not.toContain('href="/privacy"');
+    for (const f of ["src/app/data/page.tsx", "src/app/start/Landing.tsx"]) {
+      expect(read(f), f).toContain('href="/privacy"');
+      expect(read(f), f).toContain('href="/terms"');
+      expect(read(f), f).not.toMatch(/draft/i);
+    }
   });
 });
 

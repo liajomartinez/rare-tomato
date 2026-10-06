@@ -142,6 +142,16 @@ async function seed() {
 
 const page = (el: ReactElement) => renderToStaticMarkup(el);
 
+/** Round 12 rules, checked on every rendered signed-in screen: at most one card, no "Signed in as" outside Settings and data, no Privacy or Terms links in the body. */
+const layoutProblems: string[] = [];
+function checkLayoutRules(name: string, who: string, html: string) {
+  if (who === "none" && /^(landing|account|welcome|privacy|terms|roadmap|pick|setup-|state-)/.test(name)) return; // signed-out and setup screens have their own checks
+  const cards = (html.match(/class="(?:[^"]*\s)?card(?:\s[^"]*)?"/g) ?? []).length;
+  if (cards > 1) layoutProblems.push(`${name}: ${cards} cards`);
+  if (name !== "data" && html.includes("Signed in as")) layoutProblems.push(`${name}: "Signed in as" in the body`);
+  if (name !== "data" && !/^(privacy|terms|landing)/.test(name) && /href="[/](privacy|terms)"/.test(html)) layoutProblems.push(`${name}: Privacy or Terms link in the body`);
+}
+
 async function write(name: string, who: keyof typeof people, cookies: Record<string, string>, render: () => Promise<ReactElement>) {
   holder.person = people[who];
   holder.cookies = cookies;
@@ -149,6 +159,7 @@ async function write(name: string, who: keyof typeof people, cookies: Record<str
   const html = page(createElement(Layout, null, await render()));
   const doc = html.replace(/(src|href)="\/(brand|icons)\//g, '$1="$2/').replace('<html lang="en">', '<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" href="ux.css"></head>');
   fs.writeFileSync(path.join(OUT, `${name}.html`), doc);
+  checkLayoutRules(name, who, html);
 }
 
 describe("render the screens with fixture data", () => {
@@ -172,6 +183,8 @@ describe("render the screens with fixture data", () => {
     const { default: Setup } = await import("@/app/start/setup/page");
     const { default: Confirm } = await import("@/app/agents/confirm/page");
     const { default: Roadmap } = await import("@/app/start/roadmap/page");
+    const { default: WriteRule } = await import("@/app/rules/new/page");
+    const { default: AgentView } = await import("@/app/agents/view/page");
     const { OpenCopyScreen } = await import("@/app/start/OpenCopy");
     const { CheckScreen } = await import("@/app/start/CheckScreen");
     const { StepHeader, Title: OnbTitle } = await import("@/app/start/onb");
@@ -232,6 +245,13 @@ describe("render the screens with fixture data", () => {
       ["setup-claude-rule", "full", picked, async () => (await Setup({ searchParams: sp({ agent: "claude", step: "rule" }) })) as ReactElement],
       ["setup-claude-done", "full", picked, async () => (await Setup({ searchParams: sp({ agent: "claude", step: "done" }) })) as ReactElement],
       ["setup-muse-check", "museready", picked, async () => (await Setup({ searchParams: sp({ agent: "muse", step: "check" }) })) as ReactElement],
+      ["rules-new", "full", {}, async () => (await WriteRule({ searchParams: sp() })) as ReactElement],
+      ["agent-view", "full", {}, async () => (await AgentView({ searchParams: sp({ agent: ids.claude }) })) as ReactElement],
+      ["agent-view-muse", "full", {}, async () => (await AgentView({ searchParams: sp({ agent: ids.muse }) })) as ReactElement],
+      ["home-scoring-sheet", "full", {}, async () => (await Home({ searchParams: sp({ sheet: "scoring" }) })) as ReactElement],
+      ["feed-about-sheet", "full", {}, async () => (await Feed({ searchParams: sp({ sheet: "about" }) })) as ReactElement],
+      ["agents-see-sheet", "full", {}, async () => (await Agents({ searchParams: sp({ sheet: "see" }) })) as ReactElement],
+      ["rules-about-sheet", "full", {}, async () => (await Rules({ searchParams: sp({ sheet: "about" }) })) as ReactElement],
       ["agents-confirm", "full", {}, async () => (await Confirm({ searchParams: sp({ agent: ids.waitingChatgpt }) })) as ReactElement],
       // The open, then copy, then paste states, drawn straight from the screen component (the page only ever starts at state 1)
       ...(
@@ -303,5 +323,6 @@ describe("render the screens with fixture data", () => {
     }
     console.log(`wrote ${jobs.length - failed.length} pages to ${OUT}`);
     expect(failed).toEqual([]);
+    expect(layoutProblems).toEqual([]);
   }, 300_000);
 });

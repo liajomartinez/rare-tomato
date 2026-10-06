@@ -23,12 +23,12 @@ function main(html: string) {
   const [, tag, attrs, inner] = all[0];
   return { tag, text: inner.replace(/<[^>]+>/g, ""), href: /href="([^"]*)"/.exec(attrs)?.[1], attrs };
 }
-const boldLine = (html: string) => {
-  const items = [...html.matchAll(/<li class="(on)?"?[^>]*>/g)];
-  void items;
+/** The numbered lines that are shown: their numbers, and whether each is bold. Round 12 shows only the current line. */
+const shownLines = (html: string) => {
   const lis = html.split('<ol class="onb-lines">')[1]?.split("</ol>")[0] ?? "";
-  return [...lis.matchAll(/<li([^>]*)>/g)].map((m) => /class="on"/.test(m[1]));
+  return [...lis.matchAll(/<li([^>]*)><span class="badge"[^>]*>(\d)<\/span>/g)].map((m) => ({ n: Number(m[2]), bold: /class="on"/.test(m[1]) }));
 };
+const INSTRUCTION_START = "check my Rare Tomato rules (get_rules) and saved details (get_care_profile) first";
 
 const instr = COPY.claude.instr!;
 const instrScreen = (stage: Stage) =>
@@ -49,47 +49,56 @@ const instrScreen = (stage: Stage) =>
   );
 
 describe("the instruction screen (Claude C5): each stage has the right main button", () => {
-  it("state 1: Open Claude instructions, a link to the confirmed address, line 1 bold, Copy is quiet", () => {
+  it("state 1: Open Claude instructions, a link to the confirmed address; only line 1 shows, in bold; the instruction is hidden; Copy is quiet", () => {
     const html = instrScreen(1);
     const m = main(html);
     expect(m.tag).toBe("a");
     expect(m.text).toBe("Open Claude instructions");
     expect(m.href).toBe("https://claude.ai/settings/profile");
-    expect(boldLine(html)).toEqual([true, false, false]);
+    expect(shownLines(html)).toEqual([{ n: 1, bold: true }]);
+    expect(html).not.toContain(INSTRUCTION_START);
     expect(html).toMatch(/class="btn-quiet"[^>]*>Copy instruction</);
   });
 
-  it("state 2: Copy instruction is the main button, line 2 bold, Open is now a link", () => {
+  it("state 2: Copy instruction is the main button; only line 2 shows; the instruction shows in a bordered box; Open is now a link", () => {
     const html = instrScreen(2);
     const m = main(html);
     expect(m.tag).toBe("button");
     expect(m.text).toBe("Copy instruction");
-    expect(boldLine(html)).toEqual([false, true, false]);
+    expect(shownLines(html)).toEqual([{ n: 2, bold: true }]);
+    expect(html).toContain(INSTRUCTION_START);
+    expect(html).toContain('class="onb-msg"');
     expect(html).toContain(">Open Claude instructions</a>");
   });
 
-  it("state 3: tick and Copied in the box, and Go back to Claude to paste is the main button with the same link as state 1", () => {
+  it("state 3: tick and Copied, and Go back to Claude to paste is the main button with the same link as state 1; only line 3 shows", () => {
     const html = instrScreen(3);
     const m = main(html);
     expect(m.text).toBe("Go back to Claude to paste");
     expect(m.href).toBe(main(instrScreen(1)).href);
     expect(html).toContain("Copied");
-    expect(boldLine(html)).toEqual([false, false, true]);
+    expect(shownLines(html)).toEqual([{ n: 3, bold: true }]);
+    expect(html).not.toContain(INSTRUCTION_START);
   });
 
-  it("state 4: I've saved it is the main button and no line is bold", () => {
+  it("state 4: I've saved it is the main button, and the last line is the one shown", () => {
     const html = instrScreen(4);
     const m = main(html);
     expect(m.text).toBe("I&#x27;ve saved it");
     expect(m.href).toBe("/start/setup?agent=claude&amp;step=check");
-    expect(boldLine(html)).toEqual([false, false, false]);
+    expect(shownLines(html)).toEqual([{ n: 3, bold: true }]);
   });
 
-  it("every state shows all three numbered lines and the instruction word for word", () => {
+  it("every state shows exactly one numbered line, and the instruction word for word wherever it is shown", () => {
+    for (const s of [1, 2, 3, 4] as const) expect(shownLines(instrScreen(s))).toHaveLength(1);
+    expect(instrScreen(2)).toContain(instr.text);
+  });
+
+  it("Do this later is a small link, never a second button of the main kind", () => {
     for (const s of [1, 2, 3, 4] as const) {
       const html = instrScreen(s);
-      expect(boldLine(html)).toHaveLength(3);
-      expect(html).toContain("check my Rare Tomato rules (get_rules) and saved details (get_care_profile) first");
+      expect(html).toContain("Do this later");
+      expect((html.match(/btn-primary/g) ?? []).length).toBe(1);
     }
   });
 
